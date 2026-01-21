@@ -82,6 +82,30 @@ public class HerbRepository {
         return result;
     }
 
+    public ValueRange selectByRange(String range) throws IOException, GeneralSecurityException {
+        ValueRange result = null;
+        try {
+            // Create the sheets API client
+            Sheets service = getSheetsService();
+            // 전체 데이터 조회
+            result = service.spreadsheets()
+                    .values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+        } catch (GoogleJsonResponseException e) {
+            GoogleJsonError error = e.getDetails();
+            if (error.getCode() == 404) {
+                log.error("Spreadsheet not found with id {}", SPREADSHEET_ID);
+            } else {
+                throw e;
+            }
+        } catch (IOException | GeneralSecurityException e) {
+            log.error("Credential Error occurred while accessing Google Sheets API.");
+            throw e;
+        }
+        return result;
+    }
+
     /**
      * 약재 정보를 스프레드시트에 삽입.
      * 

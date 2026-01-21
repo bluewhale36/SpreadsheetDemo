@@ -18,4 +18,18 @@ public class HerbDTO {
     private final Long amount;
     private final LocalDate lastStoredDate;
     private final String memo;
+
+    public static HerbDTO from(HerbUpdateDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        return HerbDTO.builder()
+                .rowNum(dto.getRowNum())
+                .name(dto.getName())
+                .amount(dto.getNewAmount())
+                .lastStoredDate(dto.getNewLastStoredDate())
+                .memo(dto.getNewMemo())
+                .build();
+    }
 }

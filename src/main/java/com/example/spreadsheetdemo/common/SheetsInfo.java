@@ -24,4 +24,8 @@ public enum SheetsInfo {
     public String getDataRange() {
         return String.format("%s!%s:%s", sheetName, startColumn, endColumn);
     }
+
+    public String getSpecificRowRange(int rowNumber) {
+        return String.format("%s!%s%d:%s%d", sheetName, startColumn, rowNumber, endColumn, rowNumber);
+    }
 }

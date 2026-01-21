@@ -2,6 +2,7 @@ package com.example.spreadsheetdemo.herb.service;
 
 import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
+import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.mapper.HerbMapper;
@@ -41,6 +42,25 @@ public class HerbService {
             throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
         return herbMapper.toHerbDTOList(result);
+    }
+
+    public HerbDTO getHerbByRowNum(Integer rowNum) {
+        if (rowNum == null || rowNum < 2) {
+            throw new IllegalArgumentException("유효하지 않은 행 번호입니다.");
+        }
+        ValueRange result;
+        try {
+            String range = SheetsInfo.HERB.getSpecificRowRange(rowNum);
+            result = herbRepository.selectByRange(range);
+            List<HerbDTO> herbDTOList = herbMapper.toHerbDTOList(result);
+            if (herbDTOList.isEmpty()) {
+                throw new GoogleSpreadsheetsAPIException("해당 행 번호에 약재 정보가 존재하지 않습니다.");
+            }
+            return herbDTOList.get(0);
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("Error fetching herb data for row {}: {}", rowNum, e.getMessage());
+            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
     }
 
     /**
@@ -162,7 +182,7 @@ public class HerbService {
         // 약재 수정 후 수정된 범위 정보 -> 롤백 시 사용
         String updatedRange;
         try {
-            updatedRange = doUpdateHerb(dto);
+            updatedRange = updateHerbWithOptimisticLocking(dto);
         } catch (GeneralSecurityException | IOException e) {
             log.error("Error updating herb data for {}: {}", dto.getName(), e.getMessage());
             throw new GoogleSpreadsheetsAPIException("재고 또는 메모 수정에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
@@ -197,6 +217,16 @@ public class HerbService {
         }
     }
 
+    private String updateHerbWithOptimisticLocking(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
+        HerbDTO expectedHerbDTO = getHerbByRowNum(dto.getRowNum()),
+                actualHerbDTO = HerbDTO.from(dto);
+        if (expectedHerbDTO != null && expectedHerbDTO.equals(actualHerbDTO)) {
+            return doUpdateHerb(dto);
+        } else {
+            throw new OptimisticLockingException("재고 수정에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
+        }
+    }
+
     /**
      * 약재 정보 수정 수행
      *
@@ -204,14 +234,8 @@ public class HerbService {
      * @return 수정된 범위 문자열
      */
     private String doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        String range = String.format(
-                "%s!%s%d:%s%d",
-                SheetsInfo.HERB.getSheetName(),
-                SheetsInfo.HERB.getStartColumn(), dto.getRowNum(),
-                SheetsInfo.HERB.getEndColumn(), dto.getRowNum()
-        );
+        String range = SheetsInfo.HERB.getSpecificRowRange(dto.getRowNum());
         List<List<Object>> value = herbMapper.fromHerbUpdateDTOForUpdate(dto);
-
         return herbRepository.updateByRange(range, value);
     }
 
