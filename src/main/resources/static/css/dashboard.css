@@ -1,0 +1,265 @@
+/* --- 대시보드 레이아웃 --- */
+.dashboard-grid {
+    display: grid;
+    /* PC: 좌측(2) : 우측(1) 비율 */
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* 모바일/태블릿: 1열 */
+    }
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    border-left: 5px solid var(--primary-color);
+    padding-left: 0.8rem;
+}
+
+/* --- 상단 통계 카드 (Stats) --- */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4열 */
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr); /* 모바일 2열 */
+    }
+}
+
+.stat-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #666;
+}
+
+/* 아이콘별 색상 포인트 */
+.icon-total { background-color: rgba(33, 150, 243, 0.1); color: #2196F3; }
+.icon-warning { background-color: rgba(244, 67, 54, 0.1); color: #F44336; }
+.icon-in { background-color: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+.icon-out { background-color: rgba(255, 152, 0, 0.1); color: #FF9800; }
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.text-danger { color: var(--danger-color) !important; }
+
+
+/* --- 메인 카테고리 카드 --- */
+.category-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.category-card {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.category-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(243, 221, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.cat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-right: 1.2rem;
+}
+
+/* 카테고리별 아이콘 배경색 */
+.herb-color { background-color: #FFF8E1; color: #FBC02D; } /* 약재 (노랑) */
+.needle-color { background-color: #E3F2FD; color: #1976D2; } /* 침 (파랑) */
+.med-color { background-color: #FFEBEE; color: #D32F2F; } /* 의료 (빨강) */
+.office-color { background-color: #E8F5E9; color: #388E3C; } /* 일반 (초록) */
+
+.cat-details {
+    flex-grow: 1;
+}
+
+.cat-name {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.cat-desc {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.cat-arrow {
+    color: #ccc;
+    font-size: 1rem;
+    transition: transform 0.2s;
+}
+
+.category-card:hover .cat-arrow {
+    transform: translateX(5px);
+    color: var(--primary-color);
+}
+
+
+/* --- 사이드바 위젯 --- */
+.widget-card {
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.widget-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.widget-link {
+    font-size: 0.85rem;
+    color: #888;
+    text-decoration: none;
+}
+.widget-link:hover { text-decoration: underline; }
+
+/* 알림 리스트 */
+.stock-alert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #f9f9f9;
+}
+.alert-item:last-child { border-bottom: none; }
+
+.alert-name {
+    font-weight: 500;
+}
+
+.alert-badge {
+    background-color: #FFEBEE;
+    color: #D32F2F;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* 활동 로그 리스트 */
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.8rem 0;
+    position: relative;
+}
+
+.act-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #ddd;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.activity-item:first-child .act-dot {
+    background-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(243, 221, 129, 0.3);
+}
+
+.act-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.act-msg {
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+}
+
+.act-time {
+    font-size: 0.8rem;
+    color: #999;
+}

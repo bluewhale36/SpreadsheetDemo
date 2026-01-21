@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>재고 변경 이력</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/log.css}">
+    <script th:src="@{/js/log.js}" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <nav class="breadcrumb-nav" aria-label="breadcrumb">
+        <ol class="breadcrumb-list">
+            <li class="breadcrumb-item">
+                <a href="/" class="breadcrumb-link">재고 관리</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/herb" class="breadcrumb-link">약재 관리</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                이력 확인
+            </li>
+        </ol>
+    </nav>
+
+    <div class="header-actions">
+        <button type="button" class="btn btn-secondary" onclick="location.href='/herb'">
+            약재보기
+        </button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div th:if="${#lists.isEmpty(herbLogList)}" class="empty-logs">
+        <p>기록된 변경 이력이 없습니다.</p>
+    </div>
+
+    <div class="log-date-details"
+         th:each="viewDTO, iterStat : ${herbLogList}"
+         th:classappend="${iterStat.first} ? 'open' : ''">
+
+        <div class="log-date-summary" onclick="toggleAccordion(this)">
+            <div>
+                <span class="log-date-badge">DATE</span>
+                <span th:text="${viewDTO.loggedDate}">2026-01-20</span>
+            </div>
+        </div>
+
+        <div class="log-content-wrapper">
+            <div class="log-content-inner">
+
+                <div class="log-herb-card" th:each="entry : ${viewDTO.herbLogListMapByName}">
+                    <div class="log-herb-name" th:text="${entry.key}">감초</div>
+
+                    <div class="change-grid">
+
+                        <div class="grid-cell grid-header">항목</div>
+                        <div class="grid-cell grid-header">시각</div>
+                        <div class="grid-cell grid-header">변경 전</div>
+                        <div class="grid-cell grid-header">변경 후</div>
+
+                        <th:block th:each="log : ${entry.value}">
+
+                            <div class="grid-cell grid-label">수량</div>
+
+                            <div class="grid-cell val-time"
+                                 th:text="${#temporals.format(log.loggedDatetime, 'HH:mm')}">
+                                14:30
+                            </div>
+
+                            <div class="grid-cell val-old" th:text="${log.beforeAmount}">3</div>
+
+                            <div class="grid-cell">
+                        <span th:classappend="${log.amountIncreased} ? 'val-badge val-inc' : 'val-badge val-dec'">
+                            <span th:text="${log.afterAmount}">5</span>
+                            <span class="val-diff" th:if="${log.amountIncreased}"
+                                  th:text="|(+${log.afterAmount - log.beforeAmount})|">
+                                (+2)
+                            </span>
+                            <span class="val-diff" th:unless="${log.amountIncreased}"
+                                  th:text="|(${log.afterAmount - log.beforeAmount})|">
+                                (-1)
+                            </span>
+                        </span>
+                            </div>
+
+                        </th:block>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div style="height: 3rem;"></div>
+</div>
+
+</body>
+</html>

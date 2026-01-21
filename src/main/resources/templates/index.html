@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한의원 통합 재고 관리</title>
+
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script th:src="@{/js/dashboard.js}" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="logo">
+        <i class="fa-solid fa-leaf"></i> OmniInventory
+    </div>
+    <div class="header-user">
+        <span>관리자님, 환영합니다.</span>
+        <button class="btn btn-secondary btn-sm" style="margin-left: 1rem;">로그아웃</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon icon-total"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">전체 물품</span>
+                <span class="stat-value">1,240</span>
+            </div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-icon icon-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">재고 부족</span>
+                <span class="stat-value text-danger">12</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-in"><i class="fa-solid fa-truck-ramp-box"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">금일 입고</span>
+                <span class="stat-value">5</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-out"><i class="fa-solid fa-clipboard-check"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">금일 사용</span>
+                <span class="stat-value">28</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <section class="grid-section">
+            <h2 class="section-title">물품 관리 바로가기</h2>
+            <div class="category-list">
+                <a href="/herb" class="category-card">
+                    <div class="cat-icon herb-color"><i class="fa-solid fa-mortar-pestle"></i></div>
+                    <div class="cat-details">
+                        <span class="cat-name">약재 관리</span>
+                        <span class="cat-desc">약재 입고, 사용, 재고 현황</span>
+                    </div>
+                    <div class="cat-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                </a>
+
+                <a href="#" class="category-card" onclick="alert('준비 중인 기능입니다.')">
+                    <div class="cat-icon needle-color"><i class="fa-solid fa-syringe"></i></div>
+                    <div class="cat-details">
+                        <span class="cat-name">침 / 뜸</span>
+                        <span class="cat-desc">침구류 및 시술 도구</span>
+                    </div>
+                    <div class="cat-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                </a>
+
+                <a href="#" class="category-card" onclick="alert('준비 중인 기능입니다.')">
+                    <div class="cat-icon med-color"><i class="fa-solid fa-kit-medical"></i></div>
+                    <div class="cat-details">
+                        <span class="cat-name">의료 용품</span>
+                        <span class="cat-desc">거즈, 알콜, 밴드 등 소모품</span>
+                    </div>
+                    <div class="cat-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                </a>
+
+                <a href="#" class="category-card" onclick="alert('준비 중인 기능입니다.')">
+                    <div class="cat-icon office-color"><i class="fa-solid fa-box-open"></i></div>
+                    <div class="cat-details">
+                        <span class="cat-name">탕전실 / 일반</span>
+                        <span class="cat-desc">파우치, 박스, 사무용품</span>
+                    </div>
+                    <div class="cat-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                </a>
+            </div>
+        </section>
+
+        <aside class="grid-sidebar">
+
+            <div class="widget-card">
+                <div class="widget-header">
+                    <h3 class="widget-title"><i class="fa-solid fa-bell text-danger"></i> 재고 부족 알림</h3>
+                    <a href="#" class="widget-link">더보기</a>
+                </div>
+                <ul class="stock-alert-list">
+                    <li class="alert-item">
+                        <span class="alert-name">당귀</span>
+                        <span class="alert-badge">남은 수량: 2</span>
+                    </li>
+                    <li class="alert-item">
+                        <span class="alert-name">멸균 거즈 (소)</span>
+                        <span class="alert-badge">남은 수량: 5</span>
+                    </li>
+                    <li class="alert-item">
+                        <span class="alert-name">감초</span>
+                        <span class="alert-badge">남은 수량: 4</span>
+                    </li>
+                    <li class="alert-empty" style="display:none">부족한 재고가 없습니다.</li>
+                </ul>
+            </div>
+
+            <div class="widget-card">
+                <div class="widget-header">
+                    <h3 class="widget-title">최근 활동</h3>
+                </div>
+                <ul class="activity-list">
+                    <li class="activity-item">
+                        <div class="act-dot"></div>
+                        <div class="act-content">
+                            <span class="act-msg"><b>녹용</b> 입고 완료</span>
+                            <span class="act-time">10분 전</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="act-dot"></div>
+                        <div class="act-content">
+                            <span class="act-msg"><b>박스(대)</b> 50개 사용</span>
+                            <span class="act-time">1시간 전</span>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="act-dot"></div>
+                        <div class="act-content">
+                            <span class="act-msg"><b>황기</b> 정보 수정됨</span>
+                            <span class="act-time">2026-01-20</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </aside>
+    </div>
+</div>
+
+</body>
+</html>

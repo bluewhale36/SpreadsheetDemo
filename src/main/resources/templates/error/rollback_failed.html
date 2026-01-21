@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>치명적 오류 발생</title>
+
+  <link rel="stylesheet" th:href="@{/css/common.css}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* 에러 페이지 전용 스타일 (별도 파일로 분리 가능) */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f5f5f5; /* 조금 더 어두운 배경 */
+    }
+
+    .error-card {
+      background-color: white;
+      width: 90%;
+      max-width: 500px;
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      border-top: 6px solid var(--danger-color); /* 상단 붉은색 포인트 */
+    }
+
+    .error-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      background-color: #FFEBEE; /* 붉은색 배경 */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    .error-icon {
+      font-size: 2.5rem;
+      color: var(--danger-color);
+    }
+
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-color);
+      margin-bottom: 1rem;
+    }
+
+    .error-message-box {
+      background-color: #f8f9fa;
+      border: 1px solid #eee;
+      border-left: 4px solid var(--danger-color);
+      padding: 1rem;
+      border-radius: 4px;
+      color: #555;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      text-align: center;
+      white-space: pre-line; /* \n 줄바꿈 적용 핵심 */
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .btn-home {
+      background-color: var(--text-color); /* 검정색 계열 */
+      color: white;
+    }
+    .btn-home:hover { background-color: #444; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    }
+
+    /* 모바일 대응 */
+    @media (max-width: 500px) {
+      .error-card { padding: 1.5rem; }
+      .btn-group { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="error-card">
+  <div class="error-icon-wrapper">
+    <i class="fa-solid fa-triangle-exclamation error-icon"></i>
+  </div>
+
+  <h1 class="error-title">데이터 복구 실패</h1>
+
+  <div class="error-message-box" th:text="${message}">
+    약재 등록에 실패하여 데이터 자동 복구를 시도하였으나 실패했습니다.
+    약재 재고 수량 변화가 정상적으로 등록되지 않았을 수 있습니다.
+  </div>
+
+  <p style="color: #888; font-size: 0.9rem; margin-bottom: 1.5rem;">
+    데이터 불일치가 발생했을 가능성이 높습니다.<br>
+    관리자에게 문의하거나 실제 재고를 확인해주세요.
+  </p>
+
+  <div class="btn-group">
+    <button onclick="location.href='/'" class="btn btn-home">
+      <i class="fa-solid fa-house"></i> 홈으로
+    </button>
+
+    <button onclick="location.href='/herb'" class="btn btn-secondary">
+      <i class="fa-solid fa-list"></i> 재고 목록 확인
+    </button>
+  </div>
+</div>
+
+</body>
+</html>

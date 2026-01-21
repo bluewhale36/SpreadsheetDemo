@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>약재 재고 관리</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+    <link rel="stylesheet" th:href="@{/css/modal.css}">
+
+    <script th:src="@{/js/modal.js}" defer></script>
+    <script th:src="@{/js/inventory.js}" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <nav class="breadcrumb-nav" aria-label="breadcrumb">
+        <ol class="breadcrumb-list">
+            <li class="breadcrumb-item">
+                <a href="/" class="breadcrumb-link">재고 관리</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                약재 관리
+            </li>
+        </ol>
+    </nav>
+
+    <div class="header-actions">
+        <button type="button" class="btn btn-secondary" onclick="location.href='/herb/log'">
+            재고이력확인
+        </button>
+        <button class="btn btn-primary" onclick="saveChanges()">
+            변경사항저장
+        </button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="toolbar">
+        <button type="button" class="btn btn-primary" onclick="openRegisterModal()">
+            + 신규약재등록
+        </button>
+
+        <form th:action="@{/herb}" method="get" class="search-form">
+            <input type="text"
+                   name="keyword"
+                   class="search-input"
+                   placeholder="이름으로 검색"
+                   th:value="${keyword}">
+            <button type="submit" class="search-btn">🔍</button>
+        </form>
+    </div>
+
+    <div th:if="${#lists.isEmpty(herbList)}" class="no-result">
+        검색 결과가 없습니다.
+    </div>
+
+    <ul class="herb-list">
+        <li class="herb-item" th:each="herb : ${herbList}">
+            <input type="hidden" th:data-row-num="${herb.rowNum}" />
+
+            <div class="item-name" th:text="${herb.name}"></div>
+
+            <div class="date-control">
+                <input type="date"
+                       class="date-input"
+                       th:value="${herb.lastStoredDate}"
+                       th:data-original-date="${herb.lastStoredDate}"
+                       aria-label="마지막 입고일">
+            </div>
+
+            <div class="quantity-control">
+                <button type="button" class="qty-btn" onclick="updateQuantity(this, -1)">-</button>
+                <input type="number" class="qty-input"
+                       th:value="${herb.amount}"
+                       th:data-original-amount="${herb.amount}"
+                       readonly>
+                <button type="button" class="qty-btn" onclick="updateQuantity(this, 1)">+</button>
+            </div>
+
+            <div class="memo-control">
+                <textarea class="memo-input" rows="1"
+                  th:text="${herb.memo}"
+                  th:data-original-memo="${herb.memo}"></textarea>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">변경사항 확인</div>
+        </div>
+
+        <ul id="changeList" class="change-list">
+        </ul>
+
+        <div class="modal-footer">
+            <button type="button" id="modalCancelBtn" class="btn btn-secondary" onclick="closeModal()">
+                취소
+            </button>
+
+            <button type="button" id="modalSaveBtn" class="btn btn-primary" onclick="executeSave()">
+                <span class="btn-spinner"></span> <span class="btn-text">저장하기</span> </button>
+        </div>
+    </div>
+</div>
+
+<div id="registerModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">신규 약재 등록</div>
+        </div>
+
+        <div class="modal-body">
+            <form id="registerForm" novalidate> <div class="form-group">
+                <label for="regName" class="form-label">약재 이름 <span class="required">*</span></label>
+                <input type="text" id="regName" class="form-input" placeholder="약재명을 입력하세요">
+                <div id="msg-name" class="error-msg">약재 이름을 입력해주세요.</div>
+            </div>
+
+                <div class="form-group">
+                    <label for="regDate" class="form-label">마지막 입고일 <span class="required">*</span></label>
+                    <input type="date" id="regDate" class="form-input">
+                    <div id="msg-date" class="error-msg">입고일을 선택해주세요.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regAmount" class="form-label">수량 <span class="required">*</span></label>
+                    <input type="number" id="regAmount" class="form-input" placeholder="0" min="0"
+                           oninput="if(this.value < 0) this.value = 0;">
+                    <div id="msg-amount" class="error-msg">수량을 입력해주세요.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regMemo" class="form-label">메모</label>
+                    <textarea id="regMemo" class="form-input" rows="3" placeholder="메모를 입력하세요"></textarea>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" id="regCancelBtn" class="btn btn-secondary" onclick="closeRegisterModal()">
+                취소
+            </button>
+
+            <button type="button" id="regSubmitBtn" class="btn btn-primary" onclick="submitRegistration()">
+                <span class="btn-spinner"></span>
+                <span class="btn-text">등록하기</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

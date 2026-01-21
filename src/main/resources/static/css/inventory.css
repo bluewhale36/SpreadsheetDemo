@@ -1,0 +1,289 @@
+/* src/main/resources/static/css/inventory.css */
+
+/* --- 툴바 (버튼 & 검색) --- */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap; /* 공간 부족 시 줄바꿈 */
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    width: 300px;
+    max-width: 100%;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.search-form:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(243, 221, 129, 0.3);
+}
+
+.search-input {
+    border: none;
+    background: transparent;
+    flex-grow: 1;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    outline: none;
+    min-width: 0; /* flex 자식 요소 오버플로우 방지 */
+}
+
+.search-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0;
+    margin-left: 0.5rem;
+    color: #888;
+}
+
+/* [반응형] 모바일 툴바: 세로 배치 */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch; /* 가로 꽉 채우기 */
+        gap: 0.8rem;
+    }
+    .search-form {
+        width: 100%;
+    }
+    .toolbar .btn {
+        width: 100%; /* 신규 등록 버튼 꽉 채우기 */
+    }
+}
+
+/* --- 약재 리스트 아이템 --- */
+.herb-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.herb-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-left: 5px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.8rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+
+    /* PC: Grid 레이아웃 (한 줄) */
+    display: grid;
+    /* 이름(200px) 날짜(160px) 수량(140px) 메모(나머지) */
+    grid-template-columns: 200px 160px 140px 1fr;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* 내부 요소 공통 */
+.item-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-color);
+}
+
+.date-control {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.date-input {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.4rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #666;
+    background-color: #fafafa;
+    cursor: pointer;
+    outline: none;
+}
+
+.date-input:focus {
+    border-color: var(--primary-color);
+    background-color: white;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.qty-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background-color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    transition: all 0.2s;
+}
+
+.qty-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.qty-input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.3rem;
+    font-size: 1rem;
+    background-color: #fafafa;
+}
+
+.memo-control {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+}
+
+.memo-input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    resize: none;
+    height: 40px;
+    font-family: inherit;
+    line-height: 1.4;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.memo-input:focus {
+    outline: none;
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 2px rgba(243, 221, 129, 0.3);
+}
+
+/* [반응형] 태블릿 및 모바일 (900px 이하) - 리스트를 카드로 변환 */
+@media (max-width: 900px) {
+    .herb-item {
+        /* Grid 해제 -> 세로 Flex */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.2rem;
+        padding: 1.5rem 1rem;
+    }
+
+    /* 모든 입력 컨트롤 너비 100% 확장 */
+    .item-name, .date-control, .quantity-control, .memo-control {
+        width: 100%;
+        justify-content: space-between; /* 라벨/입력 균형 */
+    }
+
+    .quantity-control {
+        justify-content: flex-start; /* 수량 버튼은 좌측 정렬 */
+    }
+
+    /* 이름 스타일 변경 */
+    .item-name {
+        font-size: 1.2rem;
+        white-space: normal; /* 줄바꿈 허용 */
+        overflow: visible;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+    }
+
+    /* 터치 편의성을 위해 버튼/입력창 크기 확대 */
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+    }
+    .qty-input {
+        width: 60px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+    .date-input {
+        padding: 0.7rem; /* 터치 영역 확보 */
+    }
+}
+
+/* --- 등록 모달 폼 --- */
+#registerForm {
+    padding: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.form-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.required {
+    color: var(--danger-color);
+}
+
+.form-input {
+    padding: 0.8rem; /* 모바일 고려하여 넉넉하게 */
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(243, 221, 129, 0.3);
+}
+
+/* 유효성 검사 에러 스타일 */
+.form-input.input-error {
+    border-color: var(--danger-color);
+    background-color: #fff8f8;
+    animation: shake 0.3s ease-in-out;
+}
+
+.error-msg {
+    color: var(--danger-color);
+    font-size: 0.85rem;
+    margin-top: -0.2rem;
+    display: none;
+}
+.error-msg.show { display: block; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25%, 75% { transform: translateX(-2px); }
+    50% { transform: translateX(2px); }
+}

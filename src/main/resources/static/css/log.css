@@ -1,0 +1,168 @@
+/* src/main/resources/static/css/log.css */
+
+.empty-logs {
+    text-align: center;
+    padding: 4rem;
+    color: #888;
+}
+
+/* --- 아코디언 --- */
+.log-date-details {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    overflow: hidden;
+}
+
+.log-date-summary {
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+    user-select: none;
+}
+.log-date-summary:hover { background-color: #f9f9f9; }
+
+/* 모바일 헤더 패딩 조정 */
+@media (max-width: 600px) {
+    .log-date-summary {
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+    }
+}
+
+.log-date-summary::after {
+    content: '▼';
+    font-size: 0.8rem;
+    color: #999;
+    transition: transform 0.3s ease;
+}
+
+.log-date-details.open .log-date-summary::after {
+    transform: rotate(180deg);
+}
+
+.log-date-badge {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-right: 0.8rem;
+}
+
+/* --- 애니메이션 Wrapper --- */
+.log-content-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0;
+    background-color: #fafafa;
+    border-top: none;
+    transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s;
+}
+
+.log-date-details.open .log-content-wrapper {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    border-top: 1px solid var(--border-color);
+}
+
+.log-content-inner {
+    overflow: hidden;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .log-content-inner {
+        padding: 1rem;
+    }
+}
+
+/* --- 로그 카드 --- */
+.log-herb-card {
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1.2rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.log-herb-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 0.8rem;
+    padding-left: 0.5rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* --- [중요] 로그 그리드 레이아웃 --- */
+.log-herb-card .change-grid {
+    border: 1px solid #eee;
+    /* PC: 4열 (항목 | 시각 | 전 | 후) */
+    grid-template-columns: 60px 80px 1fr 1fr;
+}
+
+.val-time {
+    color: #888;
+    font-size: 0.9rem;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* [반응형] 모바일 로그 최적화 (600px 이하) */
+@media (max-width: 600px) {
+    .log-herb-card .change-grid {
+        font-size: 0.85rem;
+        /* 항목 컬럼 제거 -> 3열 (시각 | 전 | 후) */
+        grid-template-columns: 60px 1fr 1fr;
+    }
+
+    /* 1번째 컬럼(항목) 숨기기 */
+    /* 4n+1 : 4개씩 반복되는 컬럼 중 첫 번째 요소 */
+    .log-herb-card .change-grid > .grid-cell:nth-child(4n+1) {
+        display: none;
+    }
+}
+
+/* --- 수량 뱃지 --- */
+.val-badge {
+    font-weight: bold;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 60px;
+    justify-content: center;
+}
+
+.val-inc { background-color: rgba(33, 150, 243, 0.1); color: #1976D2; }
+.val-dec { background-color: rgba(244, 67, 54, 0.1); color: #D32F2F; }
+
+.val-diff { font-size: 0.8rem; opacity: 0.8; margin-left: 4px; }
+
+@media (max-width: 600px) {
+    .val-badge {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    .val-diff { font-size: 0.75rem; }
+}
