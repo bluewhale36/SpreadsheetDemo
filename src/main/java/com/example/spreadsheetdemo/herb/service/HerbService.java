@@ -4,6 +4,7 @@ import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
+import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.mapper.HerbMapper;
 import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
@@ -50,7 +51,7 @@ public class HerbService {
         }
         ValueRange result;
         try {
-            String range = SheetsInfo.HERB.getSpecificRowRange(rowNum);
+            String range = SheetsInfo.HERB.getSpecificRowNum(rowNum);
             result = herbRepository.selectByRange(range);
             List<HerbDTO> herbDTOList = herbMapper.toHerbDTOList(result);
             if (herbDTOList.isEmpty()) {
@@ -246,7 +247,7 @@ public class HerbService {
      * @return 수정된 범위 문자열
      */
     private String doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        String range = SheetsInfo.HERB.getSpecificRowRange(dto.getRowNum());
+        String range = SheetsInfo.HERB.getSpecificRowNum(dto.getRowNum());
         List<List<Object>> value = herbMapper.fromHerbUpdateDTOForUpdate(dto);
         return herbRepository.updateByRange(range, value);
     }
@@ -281,7 +282,7 @@ public class HerbService {
     /**
      * 약재 수정 로그 시트의 모든 행을 조회.
      *
-     * @return 스프레드시트의 모든 행 정보 {@link ValueRange}.
+     * @return 모든 로그 정보를 담은 리스트.
      */
     public List<HerbLogViewDTO> getAllHerbLogs() {
         ValueRange result;
@@ -294,6 +295,36 @@ public class HerbService {
         List<HerbLogDTO> herbLogDTOList = herbMapper.toHerbLogDTOList(result);
 
         return HerbLogViewDTO.from(herbLogDTOList);
+    }
+
+    /**
+     * 약재 수정 로그 시트의 페이징 처리된 행을 조회.
+     *
+     * @param pageNum 조회할 페이지 번호 (1부터 시작)
+     * @return 해당 페이지의 로그 정보를 담은 리스트.
+     */
+    public HerbLogPagination getHerbLogs(int pageNum) {
+        HerbLogPagination pagination;
+        ValueRange result;
+        try {
+            if (pageNum < 1) {
+                pageNum = 1;
+            }
+            int totalCount = herbLogRepository.getLastRowNumber();
+            pagination = new HerbLogPagination(pageNum, totalCount);
+            String range = SheetsInfo.HERB_LOG.getSpecificRowRange(pagination.getStartRowNum(), pagination.getEndRowNum());
+
+            System.out.println("Range to fetch: " + range); // 디버그 출력
+
+            result = herbLogRepository.selectByRange(range);
+            List<HerbLogDTO> herbLogDTOList = herbMapper.toHerbLogDTOList(result);
+            pagination.setHerbLogViewDTOList(HerbLogViewDTO.from(herbLogDTOList));
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("Error fetching herb data: {}", e.getMessage());
+            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
+
+        return pagination;
     }
 
 
