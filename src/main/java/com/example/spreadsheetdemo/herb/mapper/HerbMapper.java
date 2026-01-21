@@ -15,6 +15,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 약재 관련 DTO 와 GoogleSpreadSheetAPI 데이터 간의 매핑 처리 클래스.
@@ -41,8 +43,10 @@ public class HerbMapper {
         if (range != null) {
             // ValueRange 의 시트 이름 확인
             String sheetName = range.split("!")[0];
+            // 조회된 데이터의 시작 행 번호 (예시: "Herb!A2:D10" -> 2)
+            Integer startRowNum = extractRowNumFromRange(range);
 
-            if (sheetName.equals(SheetsInfo.HERB.getSheetName())) {
+            if (sheetName.equals(SheetsInfo.HERB.getSheetName()) && startRowNum != null) {
                 // 반환되는 리스트
                 List<HerbDTO> herbDTOList = new ArrayList<>();
                 // GoogleSpreadSheetAPI 에서 조회된 데이터
@@ -50,8 +54,8 @@ public class HerbMapper {
 
                 if (!values.isEmpty()) {
                     // 데이터 매핑
-                    // 첫 번째 행은 헤더이므로 제외
-                    for (int i = 1; i < values.size(); i++) {
+                    // startRowNum 이 1인 경우 첫 번째 행은 헤더이므로 제외
+                    for (int i = startRowNum == 1 ? 1 : 0; i < values.size(); i++) {
                         HerbDTO dto;
                         List<Object> row = values.get(i);
 
@@ -61,7 +65,7 @@ public class HerbMapper {
                             case 2:
                                 // 필수값만 있는 경우
                                 dto = HerbDTO.builder()
-                                        .rowNum(i +1)
+                                        .rowNum(i +startRowNum)
                                         .name(row.get(0).toString())
                                         .amount(parseLong(row.get(1).toString()))
                                         .build();
@@ -69,7 +73,7 @@ public class HerbMapper {
                             case 3:
                                 // 메모가 없는 경우
                                 dto = HerbDTO.builder()
-                                        .rowNum(i +1)
+                                        .rowNum(i +startRowNum)
                                         .name(row.get(0).toString())
                                         .amount(parseLong(row.get(1).toString()))
                                         .lastStoredDate(parseDate(row.get(2).toString()))
@@ -78,7 +82,7 @@ public class HerbMapper {
                             case 4:
                                 // 모든 값이 있는 경우
                                 dto = HerbDTO.builder()
-                                        .rowNum(i +1)
+                                        .rowNum(i +startRowNum)
                                         .name(row.get(0).toString())
                                         .amount(parseLong(row.get(1).toString()))
                                         .lastStoredDate(parseDate(row.get(2).toString()))
@@ -272,5 +276,12 @@ public class HerbMapper {
             log.error("Error parsing long: {}", longStr, e);
             return null;
         }
+    }
+
+    private Integer extractRowNumFromRange(String range) {
+        if (range == null) return null;
+        // 시트 이름 뒤의 첫 번째 숫자 그룹을 찾음
+        Matcher matcher = Pattern.compile("![A-Za-z]+(\\d+)").matcher(range);
+        return matcher.find() ? Integer.parseInt(matcher.group(1)) : null;
     }
 }

@@ -22,4 +22,11 @@ public class GlobalExceptionHandler {
         model.addAttribute("message", ex.getMessage());
         return "error/google_sheets_api_error";
     }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(OptimisticLockingException.class)
+    public String handleOptimisticLockingException(OptimisticLockingException ex, Model model) {
+        model.addAttribute("message", ex.getMessage());
+        return "error/optimistic_locking_error";
+        }
 }

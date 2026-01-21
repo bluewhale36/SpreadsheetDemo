@@ -74,6 +74,7 @@ public class HerbService {
 
     /**
      * 약재 등록 트랜잭션 처리
+     * 약재 등록 -> 로그 생성 순으로 처리하며, 중간에 실패할 경우 롤백 수행.
      * 
      * @param herbRegisterDTO 등록할 약재 정보
      */
@@ -172,6 +173,7 @@ public class HerbService {
 
     /**
      * 약재 재고 및 메모 수정 트랜잭션 처리
+     * 약재 정보 수정 -> 로그 생성 순으로 처리하며, 중간에 실패할 경우 롤백 수행.
      *
      * @param dto 수정할 약재 정보
      */
@@ -217,9 +219,19 @@ public class HerbService {
         }
     }
 
+    /**
+     * 낙관적 잠금을 이용한 약재 정보 수정.<br/>
+     * 기존 약재 정보와 수정 전 약재 정보를 비교하여 동일할 경우에만 수정 수행.
+     * 그렇지 않은 경우 {@link OptimisticLockingException} 예외 발생.
+     *
+     * @param dto 수정할 약재 정보
+     * @return 수정된 범위 문자열
+     * @throws GeneralSecurityException on security exception.
+     * @throws IOException on Credentials file read exception.
+     */
     private String updateHerbWithOptimisticLocking(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        HerbDTO expectedHerbDTO = getHerbByRowNum(dto.getRowNum()),
-                actualHerbDTO = HerbDTO.from(dto);
+        HerbDTO expectedHerbDTO = HerbDTO.from(dto),
+                actualHerbDTO = getHerbByRowNum(dto.getRowNum());
         if (expectedHerbDTO != null && expectedHerbDTO.equals(actualHerbDTO)) {
             return doUpdateHerb(dto);
         } else {

@@ -27,9 +27,9 @@ public class HerbDTO {
         return HerbDTO.builder()
                 .rowNum(dto.getRowNum())
                 .name(dto.getName())
-                .amount(dto.getNewAmount())
-                .lastStoredDate(dto.getNewLastStoredDate())
-                .memo(dto.getNewMemo())
+                .amount(dto.getOriginalAmount())
+                .lastStoredDate(dto.getOriginalLastStoredDate())
+                .memo(dto.getOriginalMemo())
                 .build();
     }
 }

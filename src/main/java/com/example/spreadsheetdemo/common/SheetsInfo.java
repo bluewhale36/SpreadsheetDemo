@@ -25,7 +25,7 @@ public enum SheetsInfo {
         return String.format("%s!%s:%s", sheetName, startColumn, endColumn);
     }
 
-    public String getSpecificRowRange(int rowNumber) {
-        return String.format("%s!%s%d:%s%d", sheetName, startColumn, rowNumber, endColumn, rowNumber);
+    public String getSpecificRowRange(int rowNum) {
+        return String.format("%s!%s%d:%s%d", sheetName, startColumn, rowNum, endColumn, rowNum);
     }
 }
