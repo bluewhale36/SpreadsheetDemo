@@ -26,7 +26,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class HerbLogRepository {
+public class HerbLogDAO {
 
     @Value("${google.spreadsheet.id}")
     private String SPREADSHEET_ID;

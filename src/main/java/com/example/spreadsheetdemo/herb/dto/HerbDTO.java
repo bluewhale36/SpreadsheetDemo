@@ -1,5 +1,6 @@
 package com.example.spreadsheetdemo.herb.dto;
 
+import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -30,6 +31,18 @@ public class HerbDTO {
                 .amount(dto.getOriginalAmount())
                 .lastStoredDate(dto.getOriginalLastStoredDate())
                 .memo(dto.getOriginalMemo())
+                .build();
+    }
+
+    public static HerbDTO from(Herb herb) {
+        if (herb == null) return null;
+
+        return HerbDTO.builder()
+                .rowNum(herb.getRowNum())
+                .name(herb.getName())
+                .amount(herb.getAmount())
+                .lastStoredDate(herb.getLastStoredDate())
+                .memo(herb.getMemo())
                 .build();
     }
 }

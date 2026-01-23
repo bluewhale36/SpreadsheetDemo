@@ -5,9 +5,10 @@ import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIExcepti
 import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
 import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
+import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.mapper.HerbMapper;
-import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
+import com.example.spreadsheetdemo.herb.repository.HerbLogDAO;
 import com.example.spreadsheetdemo.herb.repository.HerbRepository;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Slf4j
@@ -30,7 +30,8 @@ import java.util.stream.Collectors;
 public class HerbService {
 
     private final HerbRepository herbRepository;
-    private final HerbLogRepository herbLogRepository;
+
+    private final HerbLogDAO herbLogRepository;
     private final HerbMapper herbMapper;
 
     /**
@@ -39,33 +40,13 @@ public class HerbService {
      * @return 스프레드시트의 모든 행 정보 {@link ValueRange}.
      */
     public List<HerbDTO> getAllHerbs() {
-        ValueRange result;
-        try {
-            result = herbRepository.selectAll();
-        } catch (GeneralSecurityException | IOException e) {
-            log.error("Error fetching herb data: {}", e.getMessage());
-            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
-        }
-        return herbMapper.toHerbDTOList(result);
+        List<Herb> entityList = herbRepository.findAll();
+        return entityList.stream().map(HerbDTO::from).toList();
     }
 
     public HerbDTO getHerbByRowNum(Integer rowNum) {
-        if (rowNum == null || rowNum < 2) {
-            throw new IllegalArgumentException("유효하지 않은 행 번호입니다.");
-        }
-        ValueRange result;
-        try {
-            String range = SheetsInfo.HERB.getSpecificRowNum(rowNum);
-            result = herbRepository.selectByRange(range);
-            List<HerbDTO> herbDTOList = herbMapper.toHerbDTOList(result);
-            if (herbDTOList.isEmpty()) {
-                throw new GoogleSpreadsheetsAPIException("해당 행 번호에 약재 정보가 존재하지 않습니다.");
-            }
-            return herbDTOList.get(0);
-        } catch (GeneralSecurityException | IOException e) {
-            log.error("Error fetching herb data for row {}: {}", rowNum, e.getMessage());
-            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
-        }
+        Herb entity = herbRepository.findByRowNum(rowNum);
+        return HerbDTO.from(entity);
     }
 
     /**
@@ -131,8 +112,8 @@ public class HerbService {
      * @throws IOException on Credentials file read exception.
      */
     private String doInsertHerb(HerbRegisterDTO herbRegisterDTO) throws GeneralSecurityException, IOException {
-        List<List<Object>> value = herbMapper.fromHerbRegisterDTO(herbRegisterDTO);
-        return herbRepository.insertHerb(value);
+        Herb insertingEntity = Herb.create(herbRegisterDTO);
+        return herbRepository.save(insertingEntity);
     }
 
     /**
@@ -162,7 +143,7 @@ public class HerbService {
      * @throws IOException on Credentials file read exception.
      */
     private void rollbackHerbInsert(String rollbackRange) throws GeneralSecurityException, IOException {
-        herbRepository.deleteByRange(rollbackRange);
+        herbRepository.deleteByRowNum(extractRowNumFromRange(rollbackRange));
     }
 
     /**
@@ -211,7 +192,7 @@ public class HerbService {
 
             // 약재 재고 수정 롤백 시도
             try {
-                rollbackHerbUpdate(updatedRange, dto);
+                rollbackHerbUpdate(dto);
             } catch (GeneralSecurityException | IOException e1) {
                 // 롤백 실패
                 log.error("[CRITICAL] Updating Rollback failed for {}: {}", dto.getName(), e1.getMessage());
@@ -251,9 +232,8 @@ public class HerbService {
      * @return 수정된 범위 문자열
      */
     private String doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        String range = SheetsInfo.HERB.getSpecificRowNum(dto.getRowNum());
-        List<List<Object>> value = herbMapper.fromHerbUpdateDTOForUpdate(dto);
-        return herbRepository.updateByRange(range, value);
+        Herb updatingEntity = Herb.of(dto.getRowNum(), dto.getName(), dto.getNewAmount(), dto.getNewLastStoredDate(), dto.getNewMemo());
+        return herbRepository.save(updatingEntity);
     }
 
     /**
@@ -278,9 +258,9 @@ public class HerbService {
      *
      * @param dto 수정된 약재 정보
      */
-    private void rollbackHerbUpdate(String rollbackRange, HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        List<List<Object>> value = herbMapper.fromHerbUpdateDTOForRollback(dto);
-        herbRepository.updateByRange(rollbackRange, value);
+    private void rollbackHerbUpdate(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
+        Herb rollingBackEntity = Herb.of(dto.getRowNum(), dto.getName(), dto.getOriginalAmount(), dto.getOriginalLastStoredDate(), dto.getOriginalMemo());
+        herbRepository.save(rollingBackEntity);
     }
 
     /**
@@ -444,6 +424,13 @@ public class HerbService {
         System.out.println("startRowNum: " + startRowNum);
 
         return startRowNum;
+    }
+
+    private Integer extractRowNumFromRange(String range) {
+        if (range == null) return null;
+        // 시트 이름 뒤의 첫 번째 숫자 그룹을 찾음
+        Matcher matcher = Pattern.compile("![A-Za-z]+(\\d+)").matcher(range);
+        return matcher.find() ? Integer.parseInt(matcher.group(1)) : null;
     }
 
 }
