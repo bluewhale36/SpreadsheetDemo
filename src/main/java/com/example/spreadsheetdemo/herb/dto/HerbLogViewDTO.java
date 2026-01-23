@@ -3,6 +3,7 @@ package com.example.spreadsheetdemo.herb.dto;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -79,6 +80,6 @@ public class HerbLogViewDTO {
             );
         }
 
-        return result;
+        return result.stream().sorted(Comparator.comparing(HerbLogViewDTO::getLoggedDate).reversed()).toList();
     }
 }

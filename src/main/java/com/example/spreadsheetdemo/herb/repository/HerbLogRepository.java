@@ -136,7 +136,10 @@ public class HerbLogRepository {
      * @throws IOException on Credentials file read exception.
      */
     public int getLastRowNumber() throws GeneralSecurityException, IOException {
-        String range = String.format("%s!A:A", SheetsInfo.HERB_LOG.getSheetName());
+        String range = String.format(
+                "%s!%s:%s",
+                SheetsInfo.HERB_LOG.getSheetName(), SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getStartColumn()
+        );
 
         ValueRange response = getSheetsService().spreadsheets().values()
                 .get(SPREADSHEET_ID, range)
@@ -149,5 +152,27 @@ public class HerbLogRepository {
         }
 
         return values.size();
+    }
+
+    public ValueRange selectLoggedDateByRange(int startRowNum, int endRowNum) throws IOException, GeneralSecurityException {
+        String range = String.format(
+                "%s!A%d:A%d",
+                SheetsInfo.HERB_LOG.getSheetName(), startRowNum, endRowNum
+        );
+
+        ValueRange result;
+        try {
+            // Create the sheets API client
+            Sheets service = getSheetsService();
+            // 특정 범위 데이터 조회
+            result = service.spreadsheets()
+                    .values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+        } catch (IOException | GeneralSecurityException e) {
+            log.error("Credential Error occurred while accessing Google Sheets API.");
+            throw e;
+        }
+        return result;
     }
 }

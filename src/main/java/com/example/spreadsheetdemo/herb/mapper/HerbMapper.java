@@ -178,8 +178,10 @@ public class HerbMapper {
         if (range != null) {
             // ValueRange 의 시트 이름 확인
             String sheetName = range.split("!")[0];
+            // 조회된 데이터의 시작 행 번호 (예시: "Herb!A2:D10" -> 2)
+            Integer startRowNum = extractRowNumFromRange(range);
 
-            if (sheetName.equals(SheetsInfo.HERB_LOG.getSheetName())) {
+            if (sheetName.equals(SheetsInfo.HERB_LOG.getSheetName()) && startRowNum != null) {
                 // 반환되는 리스트
                 List<HerbLogDTO> herbLogDTOList = new ArrayList<>();
                 // GoogleSpreadSheetAPI 에서 조회된 데이터
@@ -187,8 +189,10 @@ public class HerbMapper {
 
                 if (!values.isEmpty()) {
                     // 데이터 매핑
-                    // 첫 번째 행은 헤더이므로 제외
-                    values.remove(0);
+                    if (startRowNum == 1) {
+                        // 첫 번째 행은 헤더이므로 제외
+                        values.remove(0);
+                    }
 
                     for (List<Object> row : values) {
                         herbLogDTOList.add(
@@ -210,6 +214,19 @@ public class HerbMapper {
             log.error("Retrieved data range is null.");
             throw new NullPointerException("데이터 매핑 도중 오류가 발생했습니다.");
         }
+    }
+
+    public List<LocalDate> fromLoggedDateValueRange(ValueRange value) {
+        if (value == null || value.getValues() == null) {
+            return List.of();
+        }
+
+        return value.getValues().stream()
+                .flatMap(List::stream)
+                .map(Object::toString)
+                .map(this::parseDateTime)
+                .map(LocalDate::from)
+                .toList();
     }
 
     /**
