@@ -2,7 +2,6 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="kr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>재고 변경 이력</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
     <link rel="stylesheet" th:href="@{/css/log.css}">
@@ -19,9 +18,7 @@
         </ol>
     </nav>
     <div class="header-actions">
-        <button type="button" class="btn btn-secondary" onclick="location.href='/herb'">
-            약재보기
-        </button>
+        <button type="button" class="btn btn-secondary" onclick="location.href='/herb'">약재보기</button>
     </div>
 </header>
 
@@ -47,6 +44,7 @@
                 <div class="log-content-inner">
                     <div class="log-herb-card" th:each="entry : ${viewDTO.herbLogListMapByName}">
                         <div class="log-herb-name" th:text="${entry.key}">감초</div>
+
                         <div class="change-grid">
                             <div class="grid-cell grid-header">항목</div>
                             <div class="grid-cell grid-header">시각</div>
@@ -75,7 +73,8 @@
         </div>
     </div>
 
-    <div id="more-btn-container" class="more-btn-box" style="display: none;">
+    <div id="more-btn-container" class="more-btn-box"
+         th:style="${pagination.hasNextPage} ? 'display: flex;' : 'display: none;'">
         <button type="button" id="btn-load-more" class="btn btn-more" onclick="loadMore()">
             <span>이력 더 불러오기</span>
             <i class="fa-solid fa-chevron-down"></i>
@@ -87,7 +86,7 @@
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    // 초기 페이징 상태 전달 (hasNextPage 확인용)
+    // 백엔드의 HerbLogPagination 객체를 JS 변수로 변환
     const initialData = /*[[${pagination}]]*/ {};
     /*]]>*/
 </script>
