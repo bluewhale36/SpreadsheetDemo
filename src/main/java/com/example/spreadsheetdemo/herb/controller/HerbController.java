@@ -1,7 +1,6 @@
 package com.example.spreadsheetdemo.herb.controller;
 
-import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
-import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
+import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
 import com.example.spreadsheetdemo.herb.dto.HerbDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbLogViewDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbRegisterDTO;
@@ -57,11 +56,15 @@ public class HerbController {
 
     @GetMapping("/log")
     public String herbLog(Model model) {
-        List<HerbLogViewDTO> herbLogViewDTOList = herbService.getAllHerbLogs();
-        herbLogViewDTOList.sort(
-                (l1, l2) -> l2.getLoggedDate().compareTo(l1.getLoggedDate())
-        );
-        model.addAttribute("herbLogList", herbLogViewDTOList);
+        HerbLogPagination pagination = herbService.getHerbLogs(null);
+
+        System.out.println(pagination);
+
+        model.addAttribute("pagination", pagination);
+
         return "herb/log";
+
+//        model.addAttribute("pagination", pagination);
+//        return "herb/log";
     }
 }

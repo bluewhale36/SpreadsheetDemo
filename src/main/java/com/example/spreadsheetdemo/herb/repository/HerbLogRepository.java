@@ -83,6 +83,30 @@ public class HerbLogRepository {
         return result;
     }
 
+    public ValueRange selectByRange(String range) throws IOException, GeneralSecurityException {
+        ValueRange result = null;
+        try {
+            // Create the sheets API client
+            Sheets service = getSheetsService();
+            // 특정 범위 데이터 조회
+            result = service.spreadsheets()
+                    .values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+        } catch (GoogleJsonResponseException e) {
+            GoogleJsonError error = e.getDetails();
+            if (error.getCode() == 404) {
+                log.error("Spreadsheet not found with id {}", SPREADSHEET_ID);
+            } else {
+                throw e;
+            }
+        } catch (IOException | GeneralSecurityException e) {
+            log.error("Credential Error occurred while accessing Google Sheets API.");
+            throw e;
+        }
+        return result;
+    }
+
     /**
      * 약재 로그를 스프레드시트에 삽입.
      *
@@ -102,5 +126,53 @@ public class HerbLogRepository {
 
         String insertedRange = result.getUpdates().getUpdatedRange();  // "Sheet1!A21:C22" 형태로 반환
         log.info("Log inserted at range: {}", insertedRange);
+    }
+
+    /**
+     * 약재 로그가 담긴 스프레드시트의 마지막 행 번호 조회.
+     *
+     * @return 마지막 행 번호
+     * @throws GeneralSecurityException on security exception.
+     * @throws IOException on Credentials file read exception.
+     */
+    public int getLastRowNumber() throws GeneralSecurityException, IOException {
+        String range = String.format(
+                "%s!%s:%s",
+                SheetsInfo.HERB_LOG.getSheetName(), SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getStartColumn()
+        );
+
+        ValueRange response = getSheetsService().spreadsheets().values()
+                .get(SPREADSHEET_ID, range)
+                .execute();
+
+        List<List<Object>> values = response.getValues();
+
+        if (values == null || values.isEmpty()) {
+            return 0;
+        }
+
+        return values.size();
+    }
+
+    public ValueRange selectLoggedDateByRange(int startRowNum, int endRowNum) throws IOException, GeneralSecurityException {
+        String range = String.format(
+                "%s!A%d:A%d",
+                SheetsInfo.HERB_LOG.getSheetName(), startRowNum, endRowNum
+        );
+
+        ValueRange result;
+        try {
+            // Create the sheets API client
+            Sheets service = getSheetsService();
+            // 특정 범위 데이터 조회
+            result = service.spreadsheets()
+                    .values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+        } catch (IOException | GeneralSecurityException e) {
+            log.error("Credential Error occurred while accessing Google Sheets API.");
+            throw e;
+        }
+        return result;
     }
 }

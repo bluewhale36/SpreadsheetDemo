@@ -4,6 +4,7 @@ import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
+import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.mapper.HerbMapper;
 import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
@@ -15,8 +16,12 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -50,7 +55,7 @@ public class HerbService {
         }
         ValueRange result;
         try {
-            String range = SheetsInfo.HERB.getSpecificRowRange(rowNum);
+            String range = SheetsInfo.HERB.getSpecificRowNum(rowNum);
             result = herbRepository.selectByRange(range);
             List<HerbDTO> herbDTOList = herbMapper.toHerbDTOList(result);
             if (herbDTOList.isEmpty()) {
@@ -246,7 +251,7 @@ public class HerbService {
      * @return 수정된 범위 문자열
      */
     private String doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
-        String range = SheetsInfo.HERB.getSpecificRowRange(dto.getRowNum());
+        String range = SheetsInfo.HERB.getSpecificRowNum(dto.getRowNum());
         List<List<Object>> value = herbMapper.fromHerbUpdateDTOForUpdate(dto);
         return herbRepository.updateByRange(range, value);
     }
@@ -281,7 +286,7 @@ public class HerbService {
     /**
      * 약재 수정 로그 시트의 모든 행을 조회.
      *
-     * @return 스프레드시트의 모든 행 정보 {@link ValueRange}.
+     * @return 모든 로그 정보를 담은 리스트.
      */
     public List<HerbLogViewDTO> getAllHerbLogs() {
         ValueRange result;
@@ -296,5 +301,149 @@ public class HerbService {
         return HerbLogViewDTO.from(herbLogDTOList);
     }
 
+    /**
+     * 약재 수정 로그 시트의 페이징 처리된 행을 조회.
+     *
+     * @return 해당 페이지의 로그 정보를 담은 리스트.
+     */
+    public HerbLogPagination getHerbLogs(LocalDate stdDate) {
+        try {
+
+            LocalDate toInclude = stdDate == null ? LocalDate.now() : stdDate, fromExclude = toInclude.minusMonths(1);
+
+            /*
+                1. endRowNum 계산
+             */
+            int endRowNum = getEndRowNumForHerbLogPagination(fromExclude, toInclude);
+
+            /*
+                2. startRowNum 계산
+             */
+            int startRowNum = getStartRowNumForHerbLogPagination(fromExclude, toInclude, endRowNum);
+
+            /*
+                3. 해당 범위의 로그 데이터 조회
+             */
+            ValueRange result = herbLogRepository.selectByRange(
+                    SheetsInfo.HERB_LOG.getSpecificRowRange(startRowNum, endRowNum)
+            );
+            // 변환 및 반환
+            List<HerbLogDTO> herbLogDTOList = herbMapper.toHerbLogDTOList(result);
+
+            return HerbLogPagination.of(HerbLogViewDTO.from(herbLogDTOList), startRowNum, endRowNum, toInclude, fromExclude);
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("Error fetching herb log data: {}", e.getMessage());
+            throw new GoogleSpreadsheetsAPIException("약재 재고 로그 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
+    }
+
+    // 한번에 조회할 행 단위
+    int chunkSize = 500;
+
+    private int getEndRowNumForHerbLogPagination(LocalDate fromExclude, LocalDate toInclude) throws GeneralSecurityException, IOException {
+        int endRowNum;
+        // 역순으로 chunkSize 만큼 일자 조회하면서 toInclude 일자가 포함된 마지막 행 번호 계산
+        int tmpEndRowNum = herbLogRepository.getLastRowNumber();
+        for (int i = 1; ; i++) {
+
+            if (i > 1)  tmpEndRowNum = Math.max(tmpEndRowNum - chunkSize, 2);
+
+            System.out.printf("tmpEndRowNum is %d on i is %d\n", tmpEndRowNum, i);
+
+            // 로그 일자 조회
+            ValueRange loggedDateValue = herbLogRepository.selectLoggedDateByRange(tmpEndRowNum - chunkSize +1, tmpEndRowNum);
+
+            System.out.println("selected range: " + loggedDateValue.getRange());
+
+            List<LocalDate> loggedDateList = herbMapper.fromLoggedDateValueRange(loggedDateValue);
+
+            System.out.println("loggedDateList: " + loggedDateList);
+
+            // toInclude 일자와 fromExclude 일자 사이에 있는 로그 일자만 필터링
+            List<LocalDate> filteredLoggedDateList = loggedDateList.stream()
+                    .filter(
+                            date -> (
+                                    (date.isBefore(toInclude) || date.isEqual(toInclude)) && date.isAfter(fromExclude)
+                            )
+                    )
+                    .toList();
+
+            System.out.println("filteredLoggedDateList: " + filteredLoggedDateList);
+
+            if (!filteredLoggedDateList.isEmpty()) {
+                // toInclude 포함 이전 일자 또는 fromExclude 이후 일자 중 최신 일자 조회
+                LocalDate validToInclude = filteredLoggedDateList.stream().max(LocalDate::compareTo).get();
+
+                System.out.println("validToInclude: " + validToInclude);
+
+                int lastIndex = loggedDateList.lastIndexOf(validToInclude);
+
+                System.out.printf("lastIndex is %d\n", lastIndex);
+
+                if (lastIndex != -1) {
+                    // 포함할 마지막 일자가 조회된 경우 해당 인덱스를 기준으로 endRowNum 계산
+                    System.out.println("found toInclude date in the log list");
+                    endRowNum = tmpEndRowNum -( loggedDateList.size() -1 - lastIndex );
+                    break;
+                } else if (tmpEndRowNum == 2) {
+                    System.out.println("reached the first row. stop searching");
+                    endRowNum = tmpEndRowNum;
+                    break;
+                }
+            }
+            System.out.println("toInclude date not found. continue searching");
+        }
+        System.out.println("endRowNum: " + endRowNum);
+
+        return endRowNum;
+    }
+
+    private int getStartRowNumForHerbLogPagination(LocalDate fromExclude, LocalDate toInclude, int endRowNum) throws GeneralSecurityException, IOException {
+        int startRowNum;
+        int tmpStartRowNum;
+        for (int i = 1; ; i++) {
+
+            tmpStartRowNum = Math.max(endRowNum - i*chunkSize +1, 2);
+
+            System.out.printf("tmpStartRowNum is %d on i is %d\n", tmpStartRowNum, i);
+
+            // 로그 일자 조회
+            ValueRange loggedDateValue = herbLogRepository.selectLoggedDateByRange(tmpStartRowNum, endRowNum);
+            System.out.println("selected range: " + loggedDateValue.getRange());
+            List<LocalDate> loggedDateList = herbMapper.fromLoggedDateValueRange(loggedDateValue);
+            System.out.println("loggedDateList: " + loggedDateList);
+            // toInclude 일자와 fromExclude 일자 사이에 있는 로그 일자만 필터링
+            List<LocalDate> filteredLoggedDateList = loggedDateList.stream()
+                    .filter(
+                            date -> (
+                                    (date.isBefore(toInclude) || date.isEqual(toInclude)) && date.isAfter(fromExclude)
+                            )
+                    )
+                    .toList();
+
+            System.out.println("filteredLoggedDateList: " + filteredLoggedDateList);
+
+            if (loggedDateList.size() != filteredLoggedDateList.size()) {
+                // 두 리스트의 개수가 다를 경우 범위 내에 포함되지 않는 일자가 존재함
+                // -> 해당 일자 내 데이터가 모두 조회되므로 startRowNum 계산
+                LocalDate validFromExclude = filteredLoggedDateList.stream().min(LocalDate::compareTo).get();
+
+                System.out.println("validFromExclude: " + validFromExclude);
+
+                int firstIndex = loggedDateList.indexOf(validFromExclude);
+                startRowNum = tmpStartRowNum + firstIndex;
+                break;
+            } else if (tmpStartRowNum == 2) {
+                System.out.println("reached the first row. stop searching");
+                // 시작 행 번호가 2인 경우 더 이상 범위를 넓힐 수 없음 -> 전체 범위 조회
+                startRowNum = tmpStartRowNum;
+                break;
+            }
+            System.out.println("all log is in the date range. expand range");
+        }
+        System.out.println("startRowNum: " + startRowNum);
+
+        return startRowNum;
+    }
 
 }
