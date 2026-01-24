@@ -28,5 +28,5 @@ public class GlobalExceptionHandler {
     public String handleOptimisticLockingException(OptimisticLockingException ex, Model model) {
         model.addAttribute("message", ex.getMessage());
         return "error/optimistic_locking_error";
-        }
+    }
 }

@@ -124,10 +124,10 @@ function renderHerbCards(herbLogMap) {
 
 function renderLogRows(logs) {
     // 최신 시간순 정렬
-    logs.sort((a, b) => new Date(b.loggedDatetime) - new Date(a.loggedDatetime));
+    logs.sort((a, b) => new Date(b.loggedDateTime) - new Date(a.loggedDateTime));
 
     return logs.map(log => {
-        const dateObj = new Date(log.loggedDatetime);
+        const dateObj = new Date(log.loggedDateTime);
         const timeStr = dateObj.toLocaleTimeString('ko-KR', {
             hour: '2-digit', minute: '2-digit', hour12: false
         });

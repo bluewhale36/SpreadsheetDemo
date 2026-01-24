@@ -54,7 +54,7 @@
                             <th:block th:each="log : ${entry.value}">
                                 <div class="grid-cell grid-label">수량</div>
                                 <div class="grid-cell val-time"
-                                     th:text="${#temporals.format(log.loggedDatetime, 'HH:mm')}">14:30</div>
+                                     th:text="${#temporals.format(log.getLoggedDateTime, 'HH:mm')}">14:30</div>
                                 <div class="grid-cell val-old" th:text="${log.beforeAmount}">3</div>
                                 <div class="grid-cell">
                                     <span th:classappend="${log.amountIncreased} ? 'val-badge val-inc' : 'val-badge val-dec'">

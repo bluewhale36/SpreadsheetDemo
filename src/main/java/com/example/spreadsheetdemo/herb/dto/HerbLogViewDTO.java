@@ -3,7 +3,6 @@ package com.example.spreadsheetdemo.herb.dto;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -52,7 +51,7 @@ public class HerbLogViewDTO {
         Map<LocalDate, List<HerbLogDTO>> groupedLogsByDate = logDTOList.stream()
                 .collect(
                         Collectors.groupingBy(
-                                log -> log.getLoggedDatetime().toLocalDate()
+                                log -> log.getLoggedDateTime().toLocalDate()
                         )
                 );
 
@@ -64,7 +63,7 @@ public class HerbLogViewDTO {
             // 기준 일자 내에서 약재 이름 별로 그룹화
             Map<String, List<HerbLogDTO>> groupedLogsByName = logs.stream()
                     .sorted(
-                            Comparator.comparing(HerbLogDTO::getLoggedDatetime).reversed()
+                            Comparator.comparing(HerbLogDTO::getLoggedDateTime).reversed()
                     )
                     .collect(
                             Collectors.groupingBy(
