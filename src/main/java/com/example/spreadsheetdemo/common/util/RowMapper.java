@@ -1,11 +1,13 @@
 package com.example.spreadsheetdemo.common.util;
 
+import com.example.spreadsheetdemo.common.domain.entity.SheetsEntity;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public interface RowMapper<ENTITY> {
+public interface RowMapper<ENTITY extends SheetsEntity> {
 
     ENTITY toEntity(List<Object> row, Integer rowNum);
 

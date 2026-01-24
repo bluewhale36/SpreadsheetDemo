@@ -1,6 +1,5 @@
 package com.example.spreadsheetdemo.herb.repository;
 
-import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.data.SheetsDataQueryObject;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.repository.SheetsRepository;
@@ -14,6 +13,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @Component
 @RequiredArgsConstructor
@@ -25,16 +25,14 @@ public class HerbRepository implements SheetsRepository<Herb> {
     @Override
     public List<Herb> findAll() {
         try {
-            return dqo.select(new HerbQuerySpec(), herbRowMapper);
+            return dqo.select(HerbQuerySpec.ofAllDataRange(null), herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
     }
 
     public Herb findByRowNum(int rowNum) {
-        HerbQuerySpec querySpec = new HerbQuerySpec(
-                SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), rowNum, rowNum
-        );
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataWithSpecificRowRange(rowNum, rowNum, null);
         try {
             return dqo.select(querySpec, herbRowMapper).get(0);
         } catch (GeneralSecurityException | IOException e) {
@@ -43,8 +41,13 @@ public class HerbRepository implements SheetsRepository<Herb> {
     }
 
     public Optional<List<Herb>> findAllByName(String name) {
-        List<Herb> result = findAll().stream().filter(herb -> herb.getName().equals(name)).toList();
-        return !result.isEmpty() ? Optional.of(result) : Optional.empty();
+        try {
+            Predicate<Herb> queryCondition = (herb) -> herb.getName().equals(name);
+            List<Herb> result = dqo.select(HerbQuerySpec.ofAllDataRange(queryCondition), herbRowMapper);
+            return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
     }
 
     @Override
@@ -56,9 +59,7 @@ public class HerbRepository implements SheetsRepository<Herb> {
     }
 
     private String saveNew(Herb entity) {
-        HerbQuerySpec querySpec = new HerbQuerySpec(
-                SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), null, null
-        );
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(null);
         try {
             return dqo.insert(entity, querySpec, herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
@@ -67,9 +68,7 @@ public class HerbRepository implements SheetsRepository<Herb> {
     }
 
     private String saveExisting(Herb entity) {
-        HerbQuerySpec querySpec = new HerbQuerySpec(
-                SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), entity.getRowNum(), entity.getRowNum()
-        );
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataWithSpecificRowRange(entity.getRowNum(), entity.getRowNum(), null);
         try {
             return dqo.update(entity, querySpec, herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
@@ -82,14 +81,20 @@ public class HerbRepository implements SheetsRepository<Herb> {
         return null;
     }
 
+    @Deprecated
     public String deleteByRowNum(int rowNum) {
-        HerbQuerySpec querySpec = new HerbQuerySpec(
-                SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), rowNum, rowNum
-        );
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataWithSpecificRowRange(rowNum, rowNum, null);
         try {
             return dqo.delete(querySpec);
         }  catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("약재 정보 삭제에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
+    }
+
+    public Herb deleteByName(String name) {
+        Predicate<Herb> queryCondition = (herb) -> herb.getName().equals(name);
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(queryCondition);
+        // delete where...
+        return null;
     }
 }
