@@ -62,7 +62,7 @@ public abstract class SheetsQuerySpec {
         StringBuilder query = new StringBuilder();
 
         // 시트 이름 정보
-        query.append(sheetsInfo.getSheetName());
+        query.append("'").append(sheetsInfo.getSheetName()).append("'");
         query.append("!");
 
         // 시작 열 및 행 번호

@@ -13,37 +13,38 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class HerbRepository implements SheetsRepository<Herb> {
 
     private final SheetsDataQueryObject dqo;
-
     private final HerbRowMapper herbRowMapper;
 
     @Override
     public List<Herb> findAll() {
-        List<Herb> result;
         try {
-            result = dqo.select(new HerbQuerySpec(), herbRowMapper);
+            return dqo.select(new HerbQuerySpec(), herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
-        return result;
     }
 
     public Herb findByRowNum(int rowNum) {
-        Herb result;
         HerbQuerySpec querySpec = new HerbQuerySpec(
                 SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), rowNum, rowNum
         );
         try {
-            result = dqo.select(querySpec, herbRowMapper).get(0);
+            return dqo.select(querySpec, herbRowMapper).get(0);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
-        return result;
+    }
+
+    public Optional<List<Herb>> findAllByName(String name) {
+        List<Herb> result = findAll().stream().filter(herb -> herb.getName().equals(name)).toList();
+        return !result.isEmpty() ? Optional.of(result) : Optional.empty();
     }
 
     @Override
