@@ -1,22 +1,27 @@
 package com.example.spreadsheetdemo.herb.domain.queryspec;
 
-import com.example.spreadsheetdemo.common.SheetsInfo;
-import com.example.spreadsheetdemo.common.domain.entity.SheetsEntity;
+import com.example.spreadsheetdemo.common.enums.SheetsInfo;
 import com.example.spreadsheetdemo.common.domain.queryspec.SheetsQuerySpec;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
+import com.example.spreadsheetdemo.herb.enums.HerbSheetColumnInfo;
+import lombok.Getter;
 
 import java.util.function.Predicate;
 
+@Getter
 public class HerbQuerySpec extends SheetsQuerySpec<Herb> {
 
     private HerbQuerySpec(
-            String startColumn, String endColumn, Integer startRowNum, Integer endRowNum, Predicate<Herb> queryCondition
+            Integer startRowNum, Integer endRowNum, Predicate<Herb> queryCondition, HerbSheetColumnInfo... herbSheetColumnInfos
     ) {
-        super(SheetsInfo.HERB, startColumn, endColumn, startRowNum, endRowNum, queryCondition);
+        super(SheetsInfo.HERB, startRowNum, endRowNum, queryCondition, herbSheetColumnInfos);
     }
 
     private HerbQuerySpec(Predicate<Herb> queryCondition) {
-        this(SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(), SheetsInfo.HERB.getStartRowNum(), SheetsInfo.HERB.getEndRowNum(), queryCondition);
+        this(
+                SheetsInfo.HERB.getStartRowNum(), SheetsInfo.HERB.getEndRowNum(),
+                queryCondition, HerbSheetColumnInfo.values()
+        );
     }
 
     /**
@@ -32,18 +37,20 @@ public class HerbQuerySpec extends SheetsQuerySpec<Herb> {
     /**
      * {@link SheetsInfo#HERB} 시트의 특정 열 범위에 대한 모든 데이터를 대상 범위로 하는 {@link HerbQuerySpec} 객체를 반환함.
      *
-     * @param startColumn 시작 열 번호 문자열.
-     * @param endColumn 종료 열 번호 문자열. {@code null} 값 전달 시, {@code SheetsInfo.HERB.endColumn} 까지의 범위로 지정됨.
      * @param queryCondition 데이터를 필터링 하는 조건.
+     * @param herbSheetColumnInfos 조회할 열의 이름.
      * @return {@link SheetsInfo#HERB} 시트의 전달된 시작-종료 열 번호의 모든 데이터를 대상 범위로 하는 {@link HerbQuerySpec} 객체.
      */
-    public static HerbQuerySpec ofAllRowDataWithSpecificColumnRange(
-            String startColumn, String endColumn, Predicate<Herb> queryCondition
+    public static HerbQuerySpec ofAllRowDataRange(
+            Predicate<Herb> queryCondition, HerbSheetColumnInfo... herbSheetColumnInfos
     ) {
+        if (herbSheetColumnInfos == null || herbSheetColumnInfos.length == 0) {
+            return new HerbQuerySpec(
+                    SheetsInfo.HERB.getStartRowNum(), SheetsInfo.HERB.getEndRowNum(), queryCondition, HerbSheetColumnInfo.values()
+            );
+        }
         return new HerbQuerySpec(
-                startColumn, endColumn,
-                SheetsInfo.HERB.getStartRowNum(), SheetsInfo.HERB.getEndRowNum(),
-                queryCondition
+                SheetsInfo.HERB.getStartRowNum(), SheetsInfo.HERB.getEndRowNum(), queryCondition, herbSheetColumnInfos
         );
     }
 
@@ -55,13 +62,9 @@ public class HerbQuerySpec extends SheetsQuerySpec<Herb> {
      * @param queryCondition 데이터를 필터링 하는 조건.
      * @return {@link SheetsInfo#HERB} 시트의 전달된 시작-종료 행 번호의 모든 데이터를 대상 범위로 하는 {@link HerbQuerySpec} 객체.
      */
-    public static HerbQuerySpec ofAllColumnDataWithSpecificRowRange(
+    public static HerbQuerySpec ofAllColumnDataRange(
             int startRowNum, Integer endRowNum, Predicate<Herb> queryCondition
     ) {
-        return new HerbQuerySpec(
-                SheetsInfo.HERB.getStartColumn(), SheetsInfo.HERB.getEndColumn(),
-                startRowNum, endRowNum,
-                queryCondition
-        );
+        return new HerbQuerySpec(startRowNum, endRowNum, queryCondition, HerbSheetColumnInfo.values());
     }
 }

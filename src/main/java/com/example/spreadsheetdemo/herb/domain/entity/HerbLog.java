@@ -1,13 +1,14 @@
 package com.example.spreadsheetdemo.herb.domain.entity;
 
 import com.example.spreadsheetdemo.common.domain.entity.SheetsEntity;
-import com.example.spreadsheetdemo.herb.dto.HerbLogDTO;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.function.Supplier;
 
-
+@ToString(callSuper = true)
 public class HerbLog extends SheetsEntity {
 
     @Getter
@@ -26,11 +27,12 @@ public class HerbLog extends SheetsEntity {
         return cachedHerb = cachedHerb == null ? herbSupplier.get() : cachedHerb;
     }
 
-    private HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount) {
+    public HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount) {
         this(rowNum, loggedDateTime, name, beforeAmount, afterAmount, null);
     }
 
-    private HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount, Supplier<Herb> herbSupplier) {
+    @Builder
+    public HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount, Supplier<Herb> herbSupplier) {
         super(rowNum);
         this.loggedDateTime = loggedDateTime;
         this.name = name;
