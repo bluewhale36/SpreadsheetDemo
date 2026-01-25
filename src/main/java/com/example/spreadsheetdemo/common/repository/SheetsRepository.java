@@ -15,8 +15,8 @@ public interface SheetsRepository<E extends SheetsEntity> {
 
     List<E> findAll();
 
-    String save(E entity);
+    E save(E entity);
 
-    String deleteOne(E entity);
+    E deleteOne(E entity);
 
 }

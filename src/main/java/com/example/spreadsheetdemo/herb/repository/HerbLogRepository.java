@@ -1,6 +1,5 @@
 package com.example.spreadsheetdemo.herb.repository;
 
-import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.data.SheetsDataQueryObject;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.repository.SheetsRepository;
@@ -26,16 +25,14 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     @Override
     public List<HerbLog> findAll() {
         try {
-            return dqo.select(new HerbLogQuerySpec(), herbLogRowMapper);
+            return dqo.select(HerbLogQuerySpec.ofAllDataRange(null), herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
         }
     }
 
     public Optional<List<HerbLog>> findAllByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = new HerbLogQuerySpec(
-                SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getEndColumn(), startRowNum, endRowNum
-        );
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataWithSpecificRowRange(startRowNum, endRowNum, null);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.isEmpty() ? Optional.empty() : Optional.of(result);
@@ -45,9 +42,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     public Optional<List<LocalDateTime>> findAllLoggedDateTimeByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = new HerbLogQuerySpec(
-                "A", "A", startRowNum, endRowNum
-        );
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataWithSpecificDimensionRange("A", "A", startRowNum, endRowNum, null);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.isEmpty() ? Optional.empty() : Optional.of(result.stream().map(HerbLog::getLoggedDateTime).toList());
@@ -57,9 +52,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     public int countAll() {
-        HerbLogQuerySpec querySpec = new HerbLogQuerySpec(
-                SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getStartColumn()
-        );
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllRowDataWithSpecificColumnRange("A", "A", null);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.size();
@@ -69,17 +62,15 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     @Override
-    public String save(HerbLog entity) {
+    public HerbLog save(HerbLog entity) {
         if (entity.getRowNum() == null) {
             return saveNew(entity);
         }
         return saveExisting(entity);
     }
 
-    private String saveNew(HerbLog entity) {
-        HerbLogQuerySpec querySpec = new HerbLogQuerySpec(
-                SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getEndColumn(), null, null
-        );
+    private HerbLog saveNew(HerbLog entity) {
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataRange(null);
         try {
             return dqo.insert(entity, querySpec, herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
@@ -87,10 +78,8 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         }
     }
 
-    private String saveExisting(HerbLog entity) {
-        HerbLogQuerySpec querySpec = new HerbLogQuerySpec(
-                SheetsInfo.HERB_LOG.getStartColumn(), SheetsInfo.HERB_LOG.getEndColumn(), entity.getRowNum(), entity.getRowNum()
-        );
+    private HerbLog saveExisting(HerbLog entity) {
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataWithSpecificRowRange(entity.getRowNum(), entity.getRowNum(), null);
         try {
             return dqo.update(entity, querySpec, herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
@@ -99,7 +88,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     @Override
-    public String deleteOne(HerbLog entity) {
-        return "";
+    public HerbLog deleteOne(HerbLog entity) {
+        return null;
     }
 }
