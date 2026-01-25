@@ -27,7 +27,7 @@ public class HerbRepository implements SheetsRepository<Herb> {
         try {
             return dqo.select(HerbQuerySpec.ofAllDataRange(null), herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -36,7 +36,7 @@ public class HerbRepository implements SheetsRepository<Herb> {
         try {
             return dqo.select(querySpec, herbRowMapper).get(0);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -46,55 +46,49 @@ public class HerbRepository implements SheetsRepository<Herb> {
             List<Herb> result = dqo.select(HerbQuerySpec.ofAllDataRange(queryCondition), herbRowMapper);
             return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 재고 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
     @Override
-    public String save(Herb entity) {
+    public Herb save(Herb entity) {
         if (entity.getRowNum() == null) {
             return saveNew(entity);
         }
         return saveExisting(entity);
     }
 
-    private String saveNew(Herb entity) {
+    private Herb saveNew(Herb entity) {
         HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(null);
         try {
             return dqo.insert(entity, querySpec, herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 등록에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
-    private String saveExisting(Herb entity) {
+    private Herb saveExisting(Herb entity) {
         HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataWithSpecificRowRange(entity.getRowNum(), entity.getRowNum(), null);
         try {
             return dqo.update(entity, querySpec, herbRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 정보 수정에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
     @Override
-    public String deleteOne(Herb entity) {
+    public Herb deleteOne(Herb entity) {
         return null;
     }
 
-    @Deprecated
-    public String deleteByRowNum(int rowNum) {
-        HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataWithSpecificRowRange(rowNum, rowNum, null);
+    public Herb deleteByRowNum(int rowNum) {
+        Predicate<Herb> queryCondition = (herb) -> herb.getRowNum() == rowNum;
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(queryCondition);
         try {
-            return dqo.delete(querySpec);
+            return dqo.delete(querySpec, herbRowMapper).get(0);
         }  catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException("약재 정보 삭제에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
-    public Herb deleteByName(String name) {
-        Predicate<Herb> queryCondition = (herb) -> herb.getName().equals(name);
-        HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(queryCondition);
-        // delete where...
-        return null;
-    }
 }

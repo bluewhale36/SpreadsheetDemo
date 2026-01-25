@@ -1,6 +1,5 @@
 package com.example.spreadsheetdemo.herb.repository;
 
-import com.example.spreadsheetdemo.common.SheetsInfo;
 import com.example.spreadsheetdemo.common.data.SheetsDataQueryObject;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.repository.SheetsRepository;
@@ -63,14 +62,14 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     @Override
-    public String save(HerbLog entity) {
+    public HerbLog save(HerbLog entity) {
         if (entity.getRowNum() == null) {
             return saveNew(entity);
         }
         return saveExisting(entity);
     }
 
-    private String saveNew(HerbLog entity) {
+    private HerbLog saveNew(HerbLog entity) {
         HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataRange(null);
         try {
             return dqo.insert(entity, querySpec, herbLogRowMapper);
@@ -79,7 +78,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         }
     }
 
-    private String saveExisting(HerbLog entity) {
+    private HerbLog saveExisting(HerbLog entity) {
         HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataWithSpecificRowRange(entity.getRowNum(), entity.getRowNum(), null);
         try {
             return dqo.update(entity, querySpec, herbLogRowMapper);
@@ -89,7 +88,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     @Override
-    public String deleteOne(HerbLog entity) {
-        return "";
+    public HerbLog deleteOne(HerbLog entity) {
+        return null;
     }
 }

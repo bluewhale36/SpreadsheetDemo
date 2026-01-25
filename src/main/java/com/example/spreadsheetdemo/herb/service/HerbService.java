@@ -67,9 +67,9 @@ public class HerbService {
             1. 약재 정보를 스프레드시트에 반영
          */
         // 약재 등록 후 삽입된 범위 정보 -> 롤백 시 사용
-        String herbInsertedRange;
+        Herb insertedEntity;
         try {
-            herbInsertedRange = doInsertHerb(herbRegisterDTO);
+            insertedEntity = doInsertHerb(herbRegisterDTO);
         } catch (GeneralSecurityException | IOException e) {
             log.error("Error inserting herb data for {}: {}", herbRegisterDTO.getName(), e.getMessage());
             throw new GoogleSpreadsheetsAPIException("약재 등록에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
@@ -86,7 +86,7 @@ public class HerbService {
 
             // 약재 등록 롤백 시도
             try {
-                rollbackHerbInsert(herbInsertedRange);
+                rollbackHerbInsert(insertedEntity);
             } catch (GeneralSecurityException | IOException e1) {
                 // 롤백 실패
                 log.error("[CRITICAL] Inserting Rollback failed for {}: {}", herbRegisterDTO.getName(), e1.getMessage());
@@ -104,12 +104,12 @@ public class HerbService {
     /**
      * 약재 정보 삽입 수행
      * 
-     * @param herbRegisterDTO 등록할 약재 정보
-     * @return 삽입된 범위 문자열
+     * @param herbRegisterDTO 등록할 약재 정보.
+     * @return 삽입된 약재 정보 {@link Herb} 객체.
      * @throws GeneralSecurityException on security exception.
      * @throws IOException on Credentials file read exception.
      */
-    private String doInsertHerb(HerbRegisterDTO herbRegisterDTO) throws GeneralSecurityException, IOException {
+    private Herb doInsertHerb(HerbRegisterDTO herbRegisterDTO) throws GeneralSecurityException, IOException {
         Herb insertingEntity = Herb.create(herbRegisterDTO);
         return herbRepository.save(insertingEntity);
     }
@@ -131,12 +131,12 @@ public class HerbService {
     /**
      * 약재 등록 롤백 수행
      * 
-     * @param rollbackRange 롤백할 범위 문자열
+     * @param rollingBackEntity 롤백할 {@link Herb} 객체.
      * @throws GeneralSecurityException on security exception.
      * @throws IOException on Credentials file read exception.
      */
-    private void rollbackHerbInsert(String rollbackRange) throws GeneralSecurityException, IOException {
-        herbRepository.deleteByRowNum(extractRowNumFromRange(rollbackRange));
+    private void rollbackHerbInsert(Herb rollingBackEntity) throws GeneralSecurityException, IOException {
+        herbRepository.deleteByRowNum(rollingBackEntity.getRowNum());
     }
 
     /**
@@ -161,9 +161,9 @@ public class HerbService {
             1. 수정 사항을 스프레드시트에 반영
          */
         // 약재 수정 후 수정된 범위 정보 -> 롤백 시 사용
-        String updatedRange;
+        Herb updatedEntity;
         try {
-            updatedRange = updateHerbWithOptimisticLocking(dto);
+            updatedEntity = updateHerbWithOptimisticLocking(dto);
         } catch (GeneralSecurityException | IOException e) {
             log.error("Error updating herb data for {}: {}", dto.getName(), e.getMessage());
             throw new GoogleSpreadsheetsAPIException("재고 또는 메모 수정에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
@@ -208,7 +208,7 @@ public class HerbService {
      * @throws GeneralSecurityException on security exception.
      * @throws IOException on Credentials file read exception.
      */
-    private String updateHerbWithOptimisticLocking(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
+    private Herb updateHerbWithOptimisticLocking(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
         HerbDTO expectedHerbDTO = HerbDTO.from(dto),
                 actualHerbDTO = getHerbByRowNum(dto.getRowNum());
         if (expectedHerbDTO != null && expectedHerbDTO.equals(actualHerbDTO)) {
@@ -224,7 +224,7 @@ public class HerbService {
      * @param dto 수정할 약재 정보
      * @return 수정된 범위 문자열
      */
-    private String doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
+    private Herb doUpdateHerb(HerbUpdateDTO dto) throws GeneralSecurityException, IOException {
         Herb updatingEntity = Herb.of(dto.getRowNum(), dto.getName(), dto.getNewAmount(), dto.getNewLastStoredDate(), dto.getNewMemo());
         return herbRepository.save(updatingEntity);
     }

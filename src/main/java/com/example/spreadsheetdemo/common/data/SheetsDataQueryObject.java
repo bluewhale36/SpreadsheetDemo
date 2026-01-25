@@ -99,8 +99,8 @@ public class SheetsDataQueryObject {
         ====================================================
      */
 
-    public <T extends SheetsEntity> List<T> select(SheetsQuerySpec<T> querySpec, RowMapper<T> rowMapper) throws GeneralSecurityException, IOException {
-        List<T> result;
+    public <E extends SheetsEntity> List<E> select(SheetsQuerySpec<E> querySpec, RowMapper<E> rowMapper) throws GeneralSecurityException, IOException {
+        List<E> result;
         ValueRange value;
         try {
             String query = querySpec.buildRange();
@@ -127,7 +127,7 @@ public class SheetsDataQueryObject {
 
         result = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
-            T entity = rowMapper.toEntity(data.get(i), startedRowNum +i);
+            E entity = rowMapper.toEntity(data.get(i), startedRowNum +i);
             if (querySpec.matches(entity)) {
                 result.add(entity);
             }
@@ -136,7 +136,7 @@ public class SheetsDataQueryObject {
         return result;
     }
 
-    public <T extends SheetsEntity> String insert(T entity, SheetsQuerySpec<T> querySpec, RowMapper<T> rowMapper) throws GeneralSecurityException, IOException {
+    public <E extends SheetsEntity> E insert(E entity, SheetsQuerySpec<E> querySpec, RowMapper<E> rowMapper) throws GeneralSecurityException, IOException {
         ValueRange value = new ValueRange().setValues(rowMapper.toRow(entity));
 
         AppendValuesResponse result = getSheetsService().spreadsheets().values()
@@ -148,10 +148,10 @@ public class SheetsDataQueryObject {
         String insertedRange = result.getUpdates().getUpdatedRange();
         log.info("Data has been inserted at range: {}", insertedRange);
 
-        return insertedRange;
+        return entity;
     }
 
-    public <T extends SheetsEntity> String update(T entity, SheetsQuerySpec<T> querySpec, RowMapper<T> rowMapper) throws GeneralSecurityException, IOException {
+    public <E extends SheetsEntity> E update(E entity, SheetsQuerySpec<E> querySpec, RowMapper<E> rowMapper) throws GeneralSecurityException, IOException {
         ValueRange value = new ValueRange().setValues(rowMapper.toRow(entity));
 
         UpdateValuesResponse result = getSheetsService()
@@ -164,10 +164,11 @@ public class SheetsDataQueryObject {
         String updatedRange = result.getUpdatedRange();
         log.info("Data has been updated at range: {}", updatedRange);
 
-        return updatedRange;
+        return entity;
     }
 
-    public <T extends SheetsEntity> String delete(SheetsQuerySpec<T> querySpec) throws GeneralSecurityException, IOException {
+    @Deprecated
+    public <E extends SheetsEntity> String delete(SheetsQuerySpec<E> querySpec) throws GeneralSecurityException, IOException {
         ClearValuesResponse result = getSheetsService()
                 .spreadsheets()
                 .values()
@@ -187,40 +188,37 @@ public class SheetsDataQueryObject {
      *
      * @param querySpec 삭제할 조건을 담은 {@link SheetsQuerySpec} 객체.
      * @param rowMapper API 에서 반환된 결과를 {@link SheetsEntity} 상속체로 변환하는 매핑 객체.
-     * @return 삭제된 행의 개수.
+     * @return 삭제된 행의 Entity 객체 List.
      * @param <E> {@link SheetsEntity} 를 상속하는 Entity Class.
      * @throws GeneralSecurityException on security exception.
      * @throws IOException on Credentials file read exception.
      */
-    public <E extends SheetsEntity> int delete(SheetsQuerySpec<E> querySpec, RowMapper<E> rowMapper) throws GeneralSecurityException, IOException {
+    public <E extends SheetsEntity> List<E> delete(SheetsQuerySpec<E> querySpec, RowMapper<E> rowMapper) throws GeneralSecurityException, IOException {
 
-        // 1. [Select & Filter] 삭제 대상을 조회 (기존 select 메서드 활용)
+        // 삭제 대상 조회
         List<E> targets = this.select(querySpec, rowMapper);
 
         if (targets.isEmpty()) {
-            return 0;
+            return List.of();
         }
 
-        // 2. [Sheet ID 조회] 시트 이름으로 ID 가져오기 (여기서 사용!)
         Integer sheetId = getSheetId(querySpec.getSheetsInfo().getSheetName());
 
-        // 3. [Sort] 행 번호 내림차순 정렬 (아래부터 지워야 인덱스가 안 꼬임)
+        // 삭제 대상 객체의 행번호 내림차순 정렬
         List<Integer> rowsToDelete = targets.stream()
                 .map(SheetsEntity::getRowNum)
                 .sorted(Comparator.reverseOrder())
                 .toList();
 
-        // 4. [Request 생성] 삭제 요청 만들기
+        // Request 객체 생성
         List<Request> requests = new ArrayList<>();
         for (Integer rowNum : rowsToDelete) {
-            // 구글 API 행 인덱스는 0부터 시작하므로 -1 (헤더가 1행이면 데이터는 2행부터지만 index는 1)
-            // 주의: rowNum이 1-based라면 (rowNum - 1)이 정확한 인덱스입니다.
             int startIndex = rowNum - 1;
 
             requests.add(new Request().setDeleteDimension(
                     new DeleteDimensionRequest()
                             .setRange(new DimensionRange()
-                                              .setSheetId(sheetId) // 구한 ID 주입
+                                              .setSheetId(sheetId)
                                               .setDimension("ROWS")
                                               .setStartIndex(startIndex)
                                               .setEndIndex(startIndex + 1)
@@ -228,11 +226,11 @@ public class SheetsDataQueryObject {
             ));
         }
 
-        // 5. [Execute] 실행
+        // Batch Update 실행
         BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
         getSheetsService().spreadsheets().batchUpdate(SPREADSHEET_ID, body).execute();
 
-        return rowsToDelete.size();
+        return targets;
     }
 
     private Integer extractRowNumFromRange(String range) {
