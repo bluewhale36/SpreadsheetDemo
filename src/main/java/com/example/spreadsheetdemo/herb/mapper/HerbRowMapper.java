@@ -1,39 +1,39 @@
 package com.example.spreadsheetdemo.herb.mapper;
 
+import com.example.spreadsheetdemo.common.domain.queryspec.SheetsQuerySpec;
+import com.example.spreadsheetdemo.common.enums.SheetColumnInfo;
 import com.example.spreadsheetdemo.common.util.RowMapper;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
+import com.example.spreadsheetdemo.herb.enums.HerbSheetColumnInfo;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Component
 public class HerbRowMapper implements RowMapper<Herb> {
+
     @Override
-    public Herb toEntity(List<Object> row, Integer rowNum) {
-        Herb entity = null;
+    public Herb toEntity(List<Object> row, Integer rowNum, SheetsQuerySpec<Herb> querySpec) {
 
-        if (row == null || row.isEmpty()) {
-            return entity;
+        if (row == null || row.isEmpty()) return null;
+
+        Herb.HerbBuilder herbBuilder = Herb.builder();
+
+        herbBuilder.rowNum(rowNum);
+
+        for (SheetColumnInfo columnInfo : querySpec.getTargetColumnList()) {
+
+            if (columnInfo instanceof HerbSheetColumnInfo info) {
+                int columnIndex = info.getColumnIndex();
+
+                if (columnIndex < row.size()) {
+                    Object value = row.get(columnIndex);
+                    info.getFieldSetter().accept(herbBuilder, value);
+                }
+            }
         }
 
-        switch (row.size()) {
-            // 아 이렇게 하드코딩 하기 싫다..ㅎ
-            case 2:
-                // 필수값만 있는 경우
-                entity = Herb.of(rowNum, row.get(0).toString(), parseLong(row.get(1).toString()));
-                break;
-            case 3:
-                // 메모가 없는 경우
-                entity = Herb.of(rowNum, row.get(0).toString(), parseLong(row.get(1).toString()), parseDate(row.get(2).toString()));
-                break;
-            case 4:
-                // 모든 값이 있는 경우
-                entity = Herb.of(rowNum, row.get(0).toString(), parseLong(row.get(1).toString()), parseDate(row.get(2).toString()), row.get(3).toString());
-                break;
-            default:
-        }
-        return entity;
+        return herbBuilder.build();
     }
 
     @Override

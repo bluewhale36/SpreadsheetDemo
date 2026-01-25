@@ -1,5 +1,6 @@
 package com.example.spreadsheetdemo.herb.service;
 
+import com.example.spreadsheetdemo.common.enums.SheetsInfo;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
@@ -19,8 +20,7 @@ import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -138,31 +138,30 @@ public class HerbService {
      * @param updateDTOList 수정할 약재 정보 리스트
      */
     public void updateHerbs(List<HerbUpdateDTO> updateDTOList) {
-        for (HerbUpdateDTO dto : updateDTOList) {
-            transactionalUpdateHerb(dto);
-        }
+        transactionalUpdateHerb(updateDTOList);
     }
 
     /**
      * 약재 재고 및 메모 수정 트랜잭션 처리
      * 약재 정보 수정 -> 로그 생성 순으로 처리하며, 중간에 실패할 경우 롤백 수행.
      *
-     * @param dto 수정할 약재 정보
+     * @param dtoList 수정할 약재 정보
      */
-    private void transactionalUpdateHerb(HerbUpdateDTO dto) {
+    private void transactionalUpdateHerb(List<HerbUpdateDTO> dtoList) {
         /*
             1. 수정 사항을 스프레드시트에 반영
          */
         // 약재 수정 후 수정된 범위 정보 -> 롤백 시 사용
-        Herb updatedEntity;
+        List <Herb> updatedEntityList;
         try {
-            updatedEntity = updateHerbWithOptimisticLocking(dto);
+            updatedEntityList = updateHerbWithOptimisticLocking(dtoList);
         } catch (GoogleSpreadsheetsAPIException e) {
-            log.error("Error updating herb data for {}: {}", dto.getName(), e.getMessage());
+            log.error("Error updating herb data : {}", e.getMessage());
             throw new GoogleSpreadsheetsAPIException("재고 또는 메모 수정에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
 
-        if (!dto.isAmountChanged()) {
+        List<HerbUpdateDTO> loggingDTOList = dtoList.stream().filter(HerbUpdateDTO::isAmountChanged).toList();
+        if (loggingDTOList.isEmpty()) {
             // 수량 변경이 없는 경우 로그 기록 생략
             return;
         }
@@ -171,22 +170,22 @@ public class HerbService {
             2. 수정 내역을 로그 시트에 기록
          */
         try {
-            logUpdateHerb(dto);
+            logUpdateHerb(loggingDTOList);
         } catch (GoogleSpreadsheetsAPIException e) {
-            log.error("Error logging updated herb data for {}: {}", dto.getName(), e.getMessage());
-            log.warn("Attempting to rollback herb update for {}", dto.getName());
+            log.error("Error logging updated herb data : {}", e.getMessage());
+            log.warn("Attempting to rollback herb update...");
 
             // 약재 재고 수정 롤백 시도
             try {
-                rollbackHerbUpdate(dto);
+                rollbackHerbUpdate(dtoList);
             } catch (GoogleSpreadsheetsAPIException e1) {
                 // 롤백 실패
-                log.error("[CRITICAL] Updating Rollback failed for {}: {}", dto.getName(), e1.getMessage());
+                log.error("[CRITICAL] Updating Rollback failed : {}", e1.getMessage());
                 throw new RollbackFailedException("재고 수정에 실패하여 데이터 자동 복구를 시도하였으나 실패했습니다.\n수동 복구가 필요합니다.", e1);
             }
 
             // 롤백 성공
-            log.info("Updating Rollback successful for {}", dto.getName());
+            log.info("Updating Rollback successful");
             throw new GoogleSpreadsheetsAPIException("재고 수정에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
     }
@@ -196,14 +195,20 @@ public class HerbService {
      * 기존 약재 정보와 수정 전 약재 정보를 비교하여 동일할 경우에만 수정 수행.
      * 그렇지 않은 경우 {@link OptimisticLockingException} 예외 발생.
      *
-     * @param dto 수정할 약재 정보
-     * @return 수정된 범위 문자열
+     * @param dtoList 수정할 약재 정보 리스트
+     * @return 수정된 약재 정보 리스트
      */
-    private Herb updateHerbWithOptimisticLocking(HerbUpdateDTO dto) {
-        HerbDTO expectedHerbDTO = HerbDTO.from(dto),
-                actualHerbDTO = getHerbByRowNum(dto.getRowNum());
-        if (expectedHerbDTO != null && expectedHerbDTO.equals(actualHerbDTO)) {
-            return doUpdateHerb(dto);
+    private List<Herb> updateHerbWithOptimisticLocking(List<HerbUpdateDTO> dtoList) {
+        List<HerbDTO> expectedHerbDTOList = dtoList.stream().map(HerbDTO::from).toList(), actualHerbDTOList;
+        List<Herb> entityList = herbRepository
+                        .findAllByRowNums(
+                                dtoList.stream().map(HerbUpdateDTO::getRowNum).collect(Collectors.toSet())
+                        )
+                        .orElse(List.of());
+        actualHerbDTOList = entityList.stream().map(HerbDTO::from).toList();
+
+        if (expectedHerbDTOList.equals(actualHerbDTOList)) {
+            return doUpdateHerb(dtoList);
         } else {
             throw new OptimisticLockingException("재고 수정에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
         }
@@ -212,34 +217,44 @@ public class HerbService {
     /**
      * 약재 정보 수정 수행
      *
-     * @param dto 수정할 약재 정보
-     * @return 수정된 범위 문자열
+     * @param dtoList 수정할 약재 정보 리스트
+     * @return 수정된 약재 정보 리스트
      */
-    private Herb doUpdateHerb(HerbUpdateDTO dto) {
-        Herb updatingEntity = Herb.of(dto.getRowNum(), dto.getName(), dto.getNewAmount(), dto.getNewLastStoredDate(), dto.getNewMemo());
-        return herbRepository.save(updatingEntity);
+    private List<Herb> doUpdateHerb(List<HerbUpdateDTO> dtoList) {
+        List<Herb> updatingEntityList = dtoList.stream()
+                .map(
+                        dto -> Herb.of(dto.getRowNum(), dto.getName(), dto.getNewAmount(), dto.getNewLastStoredDate(), dto.getNewMemo())
+                )
+                .toList();
+        return herbRepository.saveAll(updatingEntityList);
     }
 
     /**
      * 약재 정보 수정 로그 기록
      *
-     * @param dto 수정된 약재 정보
+     * @param dtoList 수정된 약재 정보 리스트
      */
-    private void logUpdateHerb(HerbUpdateDTO dto) {
-        HerbLog insertingEntity = HerbLog.of(
-                null, LocalDateTime.now(), dto.getName(), dto.getOriginalAmount(), dto.getNewAmount()
-        );
-        herbLogRepository.save(insertingEntity);
+    private void logUpdateHerb(List<HerbUpdateDTO> dtoList) {
+        List<HerbLog> insertingEntityList = dtoList.stream()
+                .map(
+                        dto -> HerbLog.of(null, LocalDateTime.now(), dto.getName(), dto.getOriginalAmount(), dto.getNewAmount())
+                )
+                .toList();
+        herbLogRepository.saveAll(insertingEntityList);
     }
 
     /**
      * 약재 정보 수정 롤백 수행
      *
-     * @param dto 수정된 약재 정보
+     * @param dtoList 수정된 약재 정보 리스트
      */
-    private void rollbackHerbUpdate(HerbUpdateDTO dto) {
-        Herb rollingBackEntity = Herb.of(dto.getRowNum(), dto.getName(), dto.getOriginalAmount(), dto.getOriginalLastStoredDate(), dto.getOriginalMemo());
-        herbRepository.save(rollingBackEntity);
+    private void rollbackHerbUpdate(List<HerbUpdateDTO> dtoList) {
+        List<Herb> rollingBackEntityList = dtoList.stream()
+                        .map(
+                                dto -> Herb.of(dto.getRowNum(), dto.getName(), dto.getOriginalAmount(), dto.getOriginalLastStoredDate(), dto.getOriginalMemo())
+                        )
+                        .toList();
+        herbRepository.saveAll(rollingBackEntityList);
     }
 
     /**
@@ -282,7 +297,8 @@ public class HerbService {
     private int getEndRowNumForHerbLogPagination(LocalDate fromExclude, LocalDate toInclude) throws GeneralSecurityException, IOException {
         int endRowNum;
         // 역순으로 chunkSize 만큼 일자 조회하면서 toInclude 일자가 포함된 마지막 행 번호 계산
-        int tmpEndRowNum = herbLogRepository.countAll();
+        int tmpEndRowNum = herbLogRepository.countAll() + (SheetsInfo.HERB_LOG.getStartRowNum() -1);
+        System.out.println("\n\ntmpEndRowNum : " + tmpEndRowNum + "\n\n");
         for (int i = 1; ; i++) {
 
             if (i > 1)  tmpEndRowNum = Math.max(tmpEndRowNum - chunkSize, 2);

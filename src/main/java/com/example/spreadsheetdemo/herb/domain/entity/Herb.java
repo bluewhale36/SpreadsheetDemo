@@ -4,6 +4,7 @@ import com.example.spreadsheetdemo.common.domain.entity.SheetsEntity;
 import com.example.spreadsheetdemo.herb.dto.HerbDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbRegisterDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbUpdateDTO;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -18,6 +19,7 @@ public class Herb extends SheetsEntity {
     private LocalDate lastStoredDate;
     private String memo;
 
+    @Builder
     private Herb(Integer rowNum, String name, Long amount, LocalDate lastStoredDate, String memo) {
         super(rowNum);
         this.name = name;

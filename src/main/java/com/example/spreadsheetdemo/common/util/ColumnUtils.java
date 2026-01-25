@@ -1,21 +1,22 @@
 package com.example.spreadsheetdemo.common.util;
 
-import com.example.spreadsheetdemo.common.domain.entity.SheetsEntity;
-import com.example.spreadsheetdemo.common.domain.queryspec.SheetsQuerySpec;
-import com.example.spreadsheetdemo.common.enums.SheetColumnInfo;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
-public interface RowMapper<ENTITY extends SheetsEntity> {
+public class ColumnUtils {
 
-    ENTITY toEntity(List<Object> row, Integer rowNum, SheetsQuerySpec<ENTITY> querySpec);
+    // A, B, 등 컬럼 알파벳을 0-based index 값으로 변환
+    public static int toIndex(String column) {
+        int result = 0;
+        for (int i = 0; i < column.length(); i++) {
+            result *= 26;
+            result += column.charAt(i) - 'A' + 1;
+        }
+        return result - 1;
+    }
 
-    List<List<Object>> toRow(ENTITY entity);
-
-    default LocalDate parseDate(String dateStr) {
+    public static LocalDate parseDate(String dateStr) {
 
         DateTimeFormatter[] CANDIDATES = new DateTimeFormatter[] {
                 DateTimeFormatter.ofPattern("yyyy.M.d"),
@@ -34,7 +35,7 @@ public interface RowMapper<ENTITY extends SheetsEntity> {
         return null;
     }
 
-    default LocalDateTime parseDateTime(String datetimeStr) {
+    public static LocalDateTime parseDateTime(String datetimeStr) {
 
         DateTimeFormatter[] CANDIDATES = new DateTimeFormatter[] {
                 DateTimeFormatter.ofPattern("yyyy.M.d H:m:s"),
@@ -53,12 +54,11 @@ public interface RowMapper<ENTITY extends SheetsEntity> {
         return null;
     }
 
-    default Long parseLong(String longStr) {
+    public static Long parseLong(String longStr) {
         try {
             return Long.parseLong(longStr);
         } catch (NumberFormatException e) {
             return null;
         }
     }
-
 }

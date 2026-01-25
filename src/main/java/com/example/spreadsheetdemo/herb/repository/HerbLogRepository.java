@@ -1,10 +1,12 @@
 package com.example.spreadsheetdemo.herb.repository;
 
+import com.example.spreadsheetdemo.common.enums.SheetsInfo;
 import com.example.spreadsheetdemo.common.data.SheetsDataQueryObject;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.repository.SheetsRepository;
 import com.example.spreadsheetdemo.herb.domain.entity.HerbLog;
 import com.example.spreadsheetdemo.herb.domain.queryspec.HerbLogQuerySpec;
+import com.example.spreadsheetdemo.herb.enums.HerbLogSheetColumnInfo;
 import com.example.spreadsheetdemo.herb.mapper.HerbLogRowMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,7 +35,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     public Optional<List<HerbLog>> findAllByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataWithSpecificRowRange(startRowNum, endRowNum, null);
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataRange(startRowNum, endRowNum, null);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.isEmpty() ? Optional.empty() : Optional.of(result);
@@ -42,7 +45,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     public Optional<List<LocalDateTime>> findAllLoggedDateTimeByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataWithSpecificDimensionRange("A", "A", startRowNum, endRowNum, null);
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofSpecificDimensionDataRange(startRowNum, endRowNum, null, HerbLogSheetColumnInfo.LOGGED_DATE_TIME);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.isEmpty() ? Optional.empty() : Optional.of(result.stream().map(HerbLog::getLoggedDateTime).toList());
@@ -52,7 +55,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     public int countAll() {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllRowDataWithSpecificColumnRange("A", "A", null);
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllRowDataRange(null, HerbLogSheetColumnInfo.LOGGED_DATE_TIME);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.size();
@@ -79,11 +82,50 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     }
 
     private HerbLog saveExisting(HerbLog entity) {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataWithSpecificRowRange(entity.getRowNum(), entity.getRowNum(), null);
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataRange(entity.getRowNum(), entity.getRowNum(), null);
         try {
             return dqo.update(entity, querySpec, herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<HerbLog> saveAll(List<HerbLog> entityList) {
+        if (entityList == null || entityList.isEmpty()) {
+            return List.of();
+        }
+
+        List<HerbLog>
+                insertingEntityList = entityList.stream().filter(herb -> herb.getRowNum() == null).toList(),
+                updatingEntityList = entityList.stream().filter(herb -> herb.getRowNum() != null).toList(),
+                savedEntityList = new ArrayList<>();
+
+        savedEntityList.addAll(saveAllNew(insertingEntityList));
+        savedEntityList.addAll(saveAllExisting(updatingEntityList));
+
+        return savedEntityList;
+    }
+
+    private List<HerbLog> saveAllNew(List<HerbLog> entityList) {
+        if (entityList == null || entityList.isEmpty()) {
+            return List.of();
+        }
+        try {
+            return dqo.insertAll(entityList, SheetsInfo.HERB_LOG, herbLogRowMapper);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
+        }
+    }
+
+    private List<HerbLog> saveAllExisting(List<HerbLog> entityList) {
+        if (entityList == null || entityList.isEmpty()) {
+            return List.of();
+        }
+        try {
+            return dqo.updateAll(entityList, SheetsInfo.HERB_LOG, herbLogRowMapper);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 

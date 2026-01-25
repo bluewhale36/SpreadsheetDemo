@@ -1,5 +1,6 @@
 package com.example.spreadsheetdemo.common.domain.entity;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 

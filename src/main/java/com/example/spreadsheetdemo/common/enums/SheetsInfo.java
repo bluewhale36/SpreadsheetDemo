@@ -1,4 +1,4 @@
-package com.example.spreadsheetdemo.common;
+package com.example.spreadsheetdemo.common.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
