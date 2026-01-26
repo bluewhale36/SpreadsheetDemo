@@ -16,6 +16,10 @@ public class HerbInfoDTO {
     private final List<HerbLogDTO> herbLogDTOList;
 
     public static HerbInfoDTO of(HerbDTO herbDTO, List<HerbLogDTO> herbLogDTOList) {
+        if (herbDTO == null || herbDTO.getName() == null) {
+            throw new IllegalArgumentException("herbDTO or name value should not be null while creating HerbInfoDTO.");
+        }
+
         String herbName = herbDTO.getName();
 
         if (herbLogDTOList == null || herbLogDTOList.isEmpty()) {
@@ -26,7 +30,7 @@ public class HerbInfoDTO {
                 // herbLogDTOList 에 herbDTO 에 제공된 약재 정보 외 다른 약재의 로그 데이터가 있을 경우
                 !herbLogDTOList.stream().map(HerbLogDTO::getName).allMatch(herbName::equals)
         ) {
-            throw new IllegalArgumentException("All HerbLogDTOs in herbLogDTOList must have same name from herbDTO.");
+            throw new IllegalArgumentException("All HerbLogDTOs in herbLogDTOList of HerbInfoDTO must have same name from herbDTO.");
         }
         return HerbInfoDTO.builder().herbDTO(herbDTO).herbLogDTOList(herbLogDTOList).build();
     }

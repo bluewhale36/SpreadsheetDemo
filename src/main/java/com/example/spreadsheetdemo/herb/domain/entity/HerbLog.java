@@ -27,7 +27,13 @@ public class HerbLog extends SheetsEntity {
     private Herb cachedHerb;
 
     public Herb getHerb() {
-        return cachedHerb = cachedHerb == null ? herbSupplier.get() : cachedHerb;
+        if (cachedHerb == null) {
+            if (herbSupplier == null) {
+                throw new IllegalStateException("Tried to get Herb entity while herbSupplier has not been injected.");
+            }
+            cachedHerb = herbSupplier.get();
+        }
+        return cachedHerb;
     }
 
     @Builder

@@ -34,6 +34,8 @@ public class Herb extends SheetsEntity {
     }
 
     public static Herb create(HerbRegisterDTO dto) {
+        if (dto == null) throw new IllegalArgumentException("HerbRegisterDTO should not be null while creating Herb entity.");
+
         return new Herb(
                 null,
                 dto.getName(),

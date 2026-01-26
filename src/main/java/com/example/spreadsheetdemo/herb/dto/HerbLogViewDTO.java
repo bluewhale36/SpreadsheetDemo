@@ -41,9 +41,8 @@ public class HerbLogViewDTO {
      * @return 매개변수로 빈 List 객체 전달 시 비어있는 List 객체를 반환하며, 그렇지 않은 경우 변환된 HerbLogViewDTO 리스트를 반환함.
      */
     public static List<HerbLogViewDTO> from(List<HerbLogDTO> logDTOList) {
-        if (logDTOList.isEmpty()) {
-            return List.of();
-        }
+        if (logDTOList == null) throw new IllegalArgumentException("logDTOList should not be null while creating HerbLogViewDTO.");
+        if (logDTOList.isEmpty()) return List.of();
 
         List<HerbLogViewDTO> result = new ArrayList<>();
 
