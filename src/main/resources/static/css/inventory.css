@@ -353,3 +353,18 @@
     25%, 75% { transform: translateX(-2px); }
     50% { transform: translateX(2px); }
 }
+
+/* [추가] 유효성 검사 실패 시 입력창 스타일 */
+.form-input.input-error {
+    border-color: var(--danger-color, #d32f2f);
+    background-color: #fff8f8; /* 아주 연한 붉은 배경 */
+    box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1); /* 붉은색 포커스링 효과 */
+}
+
+/* 에러 메시지 텍스트 (기존에 있다면 유지/수정) */
+.error-msg {
+    color: var(--danger-color, #d32f2f);
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    display: none; /* 기본 숨김 */
+}

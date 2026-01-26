@@ -1,3 +1,5 @@
+/* src/main/resources/static/js/details.js */
+
 function openDeleteModal() {
     document.getElementById('deleteConfirmModal').classList.add('open');
 }
@@ -18,12 +20,18 @@ async function executeDelete() {
 
     // 1. 버튼 요소 가져오기
     const deleteBtn = document.getElementById('deleteBtn');
+    const deleteBtnText = deleteBtn.querySelector('.btn-text'); // [추가] 텍스트 요소 선택
     const cancelBtn = document.getElementById('deleteCancelBtn');
 
     // 2. 로딩 상태 시작 (UI 잠금)
-    deleteBtn.classList.add('loading'); // CSS에서 스피너 표시/텍스트 숨김 처리됨
+    deleteBtn.classList.add('loading'); // CSS에서 스피너 표시 처리됨
     deleteBtn.disabled = true;          // 중복 클릭 방지
     cancelBtn.disabled = true;          // 취소 방지
+
+    // [추가] 텍스트 변경
+    if (deleteBtnText) {
+        deleteBtnText.innerText = '삭제 중...';
+    }
 
     // 3. 전송 데이터 준비 (날짜 변환 포함)
     const payload = { ...currentHerbDTO };
@@ -75,5 +83,10 @@ async function executeDelete() {
         deleteBtn.classList.remove('loading');
         deleteBtn.disabled = false;
         cancelBtn.disabled = false;
+
+        // [추가] 텍스트 원복
+        if (deleteBtnText) {
+            deleteBtnText.innerText = '삭제하기';
+        }
     }
 }
