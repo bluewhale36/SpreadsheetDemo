@@ -91,7 +91,7 @@ public class SheetsDataQueryObject {
             }
         }
 
-        throw new IllegalArgumentException("시트를 찾을 수 없습니다: " + sheetName);
+        throw new IllegalArgumentException("Unavailable to find sheetId for sheet name of: " + sheetName);
     }
 
     /*
@@ -127,10 +127,15 @@ public class SheetsDataQueryObject {
         }
 
         result = new ArrayList<>();
-        for (int i = 0; i < data.size(); i++) {
-            E entity = rowMapper.toEntity(data.get(i), startedRowNum +i, querySpec);
-            if (querySpec.matches(entity)) {
-                result.add(entity);
+        if (data != null) {
+
+            for (int i = 0; i < data.size(); i++) {
+                if (data.get(i) == null || data.get(i).isEmpty()) continue;
+
+                E entity = rowMapper.toEntity(data.get(i), startedRowNum +i, querySpec);
+                if (querySpec.matches(entity)) {
+                    result.add(entity);
+                }
             }
         }
 

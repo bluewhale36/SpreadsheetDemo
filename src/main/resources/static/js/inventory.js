@@ -1,3 +1,8 @@
+// [추가] 중복 검사를 위한 기존 약재 이름 목록 저장용 Set
+let existingHerbNames = new Set();
+// [추가] 이름 유효성 상태 플래그
+let isNameValid = false;
+
 document.addEventListener('DOMContentLoaded', () => {
     // [추가] 페이지 로드 시 모든 입력 필드에 변경 감지 이벤트 연결
     const inputs = document.querySelectorAll('.date-input, .memo-input, .qty-input');
@@ -12,6 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
             checkModifiedState(item);
         });
     });
+
+    // [추가] 약재명 입력 시 실시간 유효성 검사 연결
+    const regNameInput = document.getElementById('regName');
+    if (regNameInput) {
+        regNameInput.addEventListener('input', validateRegName);
+    }
 });
 
 // [신규] 해당 행(Row)이 수정되었는지 확인하고 스타일 적용
@@ -42,7 +53,7 @@ function checkModifiedState(item) {
     }
 }
 
-// 수량 변경 버튼 핸들러 (수정됨)
+// 수량 변경 버튼 핸들러
 function updateQuantity(btn, change) {
     const wrapper = btn.closest('.quantity-control');
     const input = wrapper.querySelector('.qty-input');
@@ -52,14 +63,12 @@ function updateQuantity(btn, change) {
     input.value = newValue;
 
     // [추가] 수량 변경 후 상태 체크 트리거
-    // 버튼은 quantity-control 안에 있으므로, herb-item을 찾아서 넘김
     const item = btn.closest('.herb-item');
     checkModifiedState(item);
 }
 
 // 변경사항 수집 및 모달 표시
 function saveChanges() {
-    // modal.js에 선언된 pendingChanges 초기화
     pendingChanges = [];
 
     const items = document.querySelectorAll('.herb-item');
@@ -69,7 +78,12 @@ function saveChanges() {
     items.forEach(item => {
         const rowNum = item.querySelector('[type=hidden]').getAttribute('data-row-num');
         const nameInput = item.querySelector('.item-name');
-        const name = nameInput.getAttribute('data-herb-name') || '';
+
+        // item-name 내부의 a 태그나 텍스트에서 이름을 가져오도록 수정 (HTML 구조에 따라 조정 필요)
+        // 기존 코드: const name = nameInput.getAttribute('data-herb-name') || '';
+        // details 링크가 추가된 구조라면 innerText 등을 사용해야 할 수 있음. 
+        // 여기서는 안전하게 innerText를 trim해서 사용하거나 기존 로직 유지.
+        const name = nameInput.getAttribute('data-herb-name').trim() || null;
 
         const dateInput = item.querySelector('.date-input');
         const originalDate = dateInput.getAttribute('data-original-date') || '-';
@@ -90,7 +104,6 @@ function saveChanges() {
             newMemo = null;
         }
 
-        // 비교 로직도 null 체크를 고려하여 수행
         const isDateChanged = originalDate !== newDate;
         const isQtyChanged = originalAmount !== newAmount;
         const isMemoChanged = originalMemo !== newMemo;
@@ -108,7 +121,6 @@ function saveChanges() {
             };
             pendingChanges.push(changeData);
 
-            // HTML 생성 (그리드 구조)
             const li = document.createElement('li');
             li.className = 'change-item';
 
@@ -160,119 +172,172 @@ function saveChanges() {
     document.getElementById('confirmModal').classList.add('open');
 }
 
-// --- 신규 등록 모달 관련 로직 ---
+/**
+ * 신규 등록 모달 열기
+ */
+async function openRegisterModal() {
+    // 1. 폼 초기화
+    document.getElementById('regName').value = '';
+    document.getElementById('regAmount').value = '';
+    document.getElementById('regDate').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('regMemo').value = '';
 
-// 1. 모달 열기 (초기화 로직에 에러 스타일 제거 추가)
-function openRegisterModal() {
-    const modal = document.getElementById('registerModal');
-    const dateInput = document.getElementById('regDate');
+    // 에러 메시지 초기화
+    clearErrorMsg('name');
+    clearErrorMsg('amount');
+    clearErrorMsg('date');
 
-    document.getElementById('registerForm').reset();
+    // 입력창 스타일 초기화
+    document.querySelectorAll('#registerForm .form-input').forEach(input => {
+        input.classList.remove('input-error');
+    });
+    isNameValid = false;
 
-    // [추가] 이전에 떠있던 에러 메시지 및 붉은 테두리 초기화
-    document.querySelectorAll('.form-input').forEach(input => input.classList.remove('input-error'));
-    document.querySelectorAll('.error-msg').forEach(msg => msg.classList.remove('show'));
+    // 2. 기존 약재 이름 목록 비동기 조회
+    try {
+        const response = await fetch('/api/herb/all/name'); // [주의] Controller 매핑 주소 확인 필요
+        if (response.ok) {
+            const names = await response.json();
+            existingHerbNames = new Set(names);
+            console.log("Loaded herb names:", existingHerbNames);
+        } else {
+            console.error("Failed to fetch herb names");
+        }
+    } catch (e) {
+        console.error("Error fetching herb names:", e);
+    }
 
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
-
-    modal.classList.add('open');
+    // 3. 모달 표시
+    document.getElementById('registerModal').classList.add('open');
 }
 
-// [신규] 등록 모달 로딩 상태 제어 함수
+/**
+ * 약재명 유효성 검사 (중복 및 빈 값 체크)
+ */
+function validateRegName() {
+    const input = document.getElementById('regName');
+    const msgBox = document.getElementById('msg-name');
+    const name = input.value.trim();
+
+    // 1. 빈 값 체크
+    if (name === '') {
+        msgBox.innerText = '약재 이름을 입력해주세요.';
+        msgBox.style.display = 'block'; // [통일] display 속성 직접 제어
+        input.classList.add('input-error');
+        isNameValid = false;
+        return;
+    }
+
+    // 2. 중복 체크
+    if (existingHerbNames.has(name)) {
+        msgBox.innerText = '이미 존재하는 약재 이름입니다.';
+        msgBox.style.display = 'block'; // [통일] display 속성 직접 제어
+        input.classList.add('input-error');
+        isNameValid = false;
+        return;
+    }
+
+    // 3. 유효함
+    msgBox.style.display = 'none';
+    input.classList.remove('input-error');
+    isNameValid = true;
+}
+
+// 등록 모달 로딩 상태 제어 함수
 function setRegisterLoadingState(isLoading) {
     const submitBtn = document.getElementById('regSubmitBtn');
     const cancelBtn = document.getElementById('regCancelBtn');
     const btnText = submitBtn.querySelector('.btn-text');
+    const inputs = document.querySelectorAll('#registerForm .form-input');
 
     if (isLoading) {
-        // 로딩 시작: 버튼 비활성화, 스피너 표시, 텍스트 변경
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
         cancelBtn.disabled = true;
         btnText.innerText = "등록 중...";
-
-        // (선택사항) 입력창들도 비활성화하여 수정 방지
-        document.querySelectorAll('#registerForm .form-input').forEach(input => input.disabled = true);
+        inputs.forEach(input => input.disabled = true);
     } else {
-        // 로딩 종료: 상태 원복
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
         cancelBtn.disabled = false;
         btnText.innerText = "등록하기";
-
-        // 입력창 비활성화 해제
-        document.querySelectorAll('#registerForm .form-input').forEach(input => input.disabled = false);
+        inputs.forEach(input => input.disabled = false);
     }
 }
 
-// 2. 등록 요청 전송 (유효성 검사 로직 강화)
+// 2. 등록 요청 전송 (유효성 검사 로직 수정됨)
 async function submitRegistration() {
+// 1. 이름 유효성 재확인
+    validateRegName();
+    // (여기서 return 하지 않음)
+
     const nameInput = document.getElementById('regName');
     const dateInput = document.getElementById('regDate');
     const amountInput = document.getElementById('regAmount');
     const memoInput = document.getElementById('regMemo');
 
-    const name = nameInput.value.trim();
-    const date = dateInput.value;
-    const amount = amountInput.value;
-    const memo = memoInput.value.trim();
-
-    let isValid = true;
-
-    // --- [수정됨] 유효성 검사 헬퍼 함수 ---
-    function setError(input, msgId, show) {
+    // [핵심 수정] 애니메이션 재시작을 위한 setError 함수 개선
+    function setError(input, msgId, isError) {
         const msgEl = document.getElementById(msgId);
-        if (show) {
-            // 1. 이미 에러 클래스가 있다면 제거하여 애니메이션 상태 초기화
+
+        if (isError) {
+            // 1. 기존 에러 클래스 제거 (애니메이션 리셋 준비)
             if (input.classList.contains('input-error')) {
                 input.classList.remove('input-error');
 
-                // 2. Reflow 강제 (브라우저가 스타일 변경을 인지하고 다시 그리도록 함)
-                // 이 줄이 없으면 브라우저 최적화 때문에 제거->추가가 하나의 동작으로 합쳐져 애니메이션이 안 뜹니다.
+                // 2. [중요] 강제 리플로우(Reflow) 발생
+                // offsetWidth를 읽으면 브라우저는 현재 스타일을 계산하기 위해
+                // 렌더링 큐를 비우고 화면을 다시 그리려 합니다.
                 void input.offsetWidth;
             }
 
-            // 3. 클래스 다시 추가 (애니메이션 재시작)
+            // 3. 클래스 다시 추가 (애니메이션 시작)
             input.classList.add('input-error');
-            msgEl.classList.add('show');
+            msgEl.style.display = 'block';
         } else {
             input.classList.remove('input-error');
-            msgEl.classList.remove('show');
+            msgEl.style.display = 'none';
         }
     }
 
-    // 1. 이름 검사
-    if (!name) {
+    // --- 유효성 검사 실행 ---
+    let isNameValidFinal = true;
+    let isDateValid = true;
+    let isAmountValid = true;
+
+    // 1. 이름 검사 (전역변수 isNameValid 활용)
+    // validateRegName()이 실행되었으므로 UI는 업데이트되었지만,
+    // submit 버튼을 눌렀을 때도 흔들림 효과를 주기 위해 강제로 setError 호출
+    if (!nameInput.value.trim() || !isNameValid) {
         setError(nameInput, 'msg-name', true);
-        isValid = false;
+        isNameValidFinal = false;
     } else {
         setError(nameInput, 'msg-name', false);
     }
 
     // 2. 날짜 검사
-    if (!date) {
+    if (!dateInput.value) {
         setError(dateInput, 'msg-date', true);
-        isValid = false;
+        isDateValid = false;
     } else {
         setError(dateInput, 'msg-date', false);
     }
 
     // 3. 수량 검사
-    if (amount === '' || amount === null) {
+    const amountVal = parseInt(amountInput.value);
+    if (amountInput.value === '' || isNaN(amountVal) || amountVal < 0) {
         setError(amountInput, 'msg-amount', true);
-        isValid = false;
+        isAmountValid = false;
     } else {
         setError(amountInput, 'msg-amount', false);
     }
 
-    if (!isValid) {
+    // 종합 판단
+    if (!isNameValidFinal || !isDateValid || !isAmountValid) {
         return;
     }
 
     // --- 데이터 전송 시작 ---
-
-    // 1. 로딩 상태 활성화 (버튼 잠금, 스피너 표시)
     setRegisterLoadingState(true);
 
     const registerData = {
@@ -285,17 +350,14 @@ async function submitRegistration() {
     try {
         const response = await fetch('/herb', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(registerData)
         });
 
         if (response.ok) {
             alert("신규 약재가 등록되었습니다.");
-            location.reload(); // 성공 시 새로고침하므로 로딩 해제 불필요
+            location.reload();
         } else {
-            // [추가된 부분] 에러 페이지 렌더링 처리
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("text/html")) {
                 const html = await response.text();
@@ -312,7 +374,6 @@ async function submitRegistration() {
     } catch (error) {
         console.error('Registration Error:', error);
         alert("서버 통신 중 오류가 발생했습니다.");
-        // 에러 발생 시 로딩 해제
         setRegisterLoadingState(false);
     }
 }
@@ -322,3 +383,8 @@ function closeRegisterModal() {
     document.getElementById('registerModal').classList.remove('open');
 }
 
+// 헬퍼 함수: 에러 메시지 숨김
+function clearErrorMsg(type) {
+    const el = document.getElementById(`msg-${type}`);
+    if (el) el.style.display = 'none';
+}

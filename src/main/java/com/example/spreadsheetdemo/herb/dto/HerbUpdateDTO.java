@@ -34,7 +34,7 @@ public class HerbUpdateDTO {
             String originalMemo, String newMemo
     ) {
         if (rowNum == null) throw new IllegalArgumentException("Herb rowNum should not be null");
-        if (rowNum < SheetsInfo.HERB.getStartRowNum() || rowNum > SheetsInfo.HERB.getEndRowNum()) throw new IllegalArgumentException("Herb rowNum should be between startRowNum and endRowNum of Herb Sheet.");
+        if (rowNum <= SheetsInfo.HERB.getStartRowNum() && (SheetsInfo.HERB.getEndRowNum() == null || rowNum >= SheetsInfo.HERB.getEndRowNum())) throw new IllegalArgumentException("Herb rowNum should be between startRowNum and endRowNum of Herb Sheet.");
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Herb name should not be null or blank");
 
         this.rowNum = rowNum;

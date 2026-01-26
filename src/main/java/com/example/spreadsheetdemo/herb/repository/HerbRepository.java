@@ -6,6 +6,7 @@ import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIExcepti
 import com.example.spreadsheetdemo.common.repository.SheetsRepository;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import com.example.spreadsheetdemo.herb.domain.queryspec.HerbQuerySpec;
+import com.example.spreadsheetdemo.herb.enums.HerbSheetColumnInfo;
 import com.example.spreadsheetdemo.herb.mapper.HerbRowMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -34,10 +35,21 @@ public class HerbRepository implements SheetsRepository<Herb> {
         }
     }
 
-    public Herb findByRowNum(int rowNum) {
+    public Optional<List<String>> findAllName() {
+        HerbQuerySpec querySpec = HerbQuerySpec.ofAllRowDataRange(null, HerbSheetColumnInfo.NAME);
+        try {
+            List<Herb> result = dqo.select(querySpec, herbRowMapper);
+            return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result.stream().map(Herb::getName).toList());
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
+        }
+    }
+
+    public Optional<Herb> findByRowNum(int rowNum) {
         HerbQuerySpec querySpec = HerbQuerySpec.ofAllColumnDataRange(rowNum, rowNum, null);
         try {
-            return dqo.select(querySpec, herbRowMapper).get(0);
+            List<Herb> result = dqo.select(querySpec, herbRowMapper);
+            return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
@@ -51,7 +63,7 @@ public class HerbRepository implements SheetsRepository<Herb> {
         HerbQuerySpec querySpec = HerbQuerySpec.ofAllDataRange(queryCondition);
         try {
             List<Herb> result = dqo.select(querySpec, herbRowMapper);
-            return result == null ? Optional.empty() : Optional.of(result);
+            return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result);
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }

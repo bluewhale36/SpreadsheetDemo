@@ -16,8 +16,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -53,6 +52,11 @@ public class HerbService {
                 .map(HerbLogDTO::from)
                 .toList();
         return HerbInfoDTO.of(herbDTO, herbLogDTOList);
+    }
+
+    public Set<String> getAllHerbName() {
+        List<String> nameList = herbRepository.findAllName().orElse(List.of());
+        return new HashSet<>(nameList);
     }
 
     /**
@@ -222,7 +226,7 @@ public class HerbService {
                         .orElse(List.of());
         actualHerbDTOList = entityList.stream().map(HerbDTO::from).sorted(Comparator.comparing(HerbDTO::getRowNum)).toList();
 
-        if (expectedHerbDTOList.equals(actualHerbDTOList)) {
+        if (Objects.equals(expectedHerbDTOList, actualHerbDTOList)) {
             return doUpdateHerb(dtoList);
         } else {
             throw new OptimisticLockingException("재고 수정에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
@@ -306,8 +310,8 @@ public class HerbService {
     }
 
     private void hardDeleteWithOptimisticLocking(HerbDTO deletingHerbDTO) throws GeneralSecurityException, IOException {
-        HerbDTO actualHerb = HerbDTO.from(herbRepository.findByRowNum(deletingHerbDTO.getRowNum()));
-        if (!deletingHerbDTO.equals(actualHerb)) {
+        HerbDTO actualHerb = HerbDTO.from(herbRepository.findByRowNum(deletingHerbDTO.getRowNum()).orElse(null));
+        if (!Objects.equals(deletingHerbDTO, actualHerb)) {
             throw new OptimisticLockingException("약재 삭제에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
         }
         herbRepository.deleteByRowNum(deletingHerbDTO.getRowNum());
