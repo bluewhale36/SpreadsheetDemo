@@ -21,7 +21,7 @@ public enum HerbLogSheetColumnInfo implements SheetColumnInfo {
     ),
     NAME(
             "name", String.class, "B",
-            Object::toString,
+            obj -> (obj == null) ? null : obj.toString(),
             (builder, value) -> builder.name(value.toString())
     ),
     BEFORE_AMOUNT(

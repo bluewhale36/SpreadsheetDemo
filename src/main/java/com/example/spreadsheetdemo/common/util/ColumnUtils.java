@@ -17,6 +17,7 @@ public class ColumnUtils {
     }
 
     public static LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) return null;
 
         DateTimeFormatter[] CANDIDATES = new DateTimeFormatter[] {
                 DateTimeFormatter.ofPattern("yyyy.M.d"),
@@ -36,6 +37,7 @@ public class ColumnUtils {
     }
 
     public static LocalDateTime parseDateTime(String datetimeStr) {
+        if (datetimeStr == null || datetimeStr.isBlank()) return null;
 
         DateTimeFormatter[] CANDIDATES = new DateTimeFormatter[] {
                 DateTimeFormatter.ofPattern("yyyy.M.d H:m:s"),
@@ -55,6 +57,8 @@ public class ColumnUtils {
     }
 
     public static Long parseLong(String longStr) {
+        if (longStr == null || longStr.isBlank()) return null;
+
         try {
             return Long.parseLong(longStr);
         } catch (NumberFormatException e) {

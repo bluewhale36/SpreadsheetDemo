@@ -59,6 +59,7 @@ public class HerbService {
      * @param herbRegisterDTO 등록할 약재 정보
      */
     public void insertHerb(HerbRegisterDTO herbRegisterDTO) {
+        if (herbRegisterDTO == null) throw new IllegalArgumentException("HerbRegisterDTO should not be null while inserting new Herb.");
         transactionalInsertHerb(herbRegisterDTO);
     }
 
@@ -144,6 +145,12 @@ public class HerbService {
      * @param updateDTOList 수정할 약재 정보 리스트
      */
     public void updateHerbs(List<HerbUpdateDTO> updateDTOList) {
+        if (updateDTOList == null || updateDTOList.isEmpty()) return;
+        for (HerbUpdateDTO dto : updateDTOList) {
+            if (dto.getRowNum() == null) {
+                throw new IllegalArgumentException("rowNum of HerbUpdateDTO should not be null while updating Herb.");
+            }
+        }
         transactionalUpdateHerb(updateDTOList);
     }
 

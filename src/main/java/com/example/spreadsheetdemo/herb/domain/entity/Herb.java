@@ -27,6 +27,9 @@ public class Herb extends SheetsEntity {
             Integer rowNum, String name, Long amount, LocalDate lastStoredDate, String memo
     ) {
         super(rowNum);
+
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Herb name should not be null or blank");
+
         this.name = name;
         this.amount = amount;
         this.lastStoredDate = lastStoredDate;

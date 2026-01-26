@@ -16,7 +16,7 @@ public enum HerbSheetColumnInfo implements SheetColumnInfo {
 
     NAME(
             "name", String.class, "A",
-            Object::toString,
+            obj -> (obj == null) ? null : obj.toString(),
             (builder, value) -> builder.name(value.toString())
     ),
     AMOUNT(
@@ -31,7 +31,7 @@ public enum HerbSheetColumnInfo implements SheetColumnInfo {
     ),
     MEMO(
             "memo", String.class, "D",
-            Object::toString,
+            obj -> (obj == null) ? null : obj.toString(),
             (builder, value) -> builder.memo(value.toString())
     );
 

@@ -1,15 +1,15 @@
 package com.example.spreadsheetdemo.herb.dto;
 
+import com.example.spreadsheetdemo.common.enums.SheetsInfo;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * 약재 정보 수정용 DTO
  */
 @Getter
-@Builder
-@RequiredArgsConstructor // Controller 의 @RequestBody 바인딩 목적
 @ToString
 @EqualsAndHashCode
 public class HerbUpdateDTO {
@@ -26,19 +26,43 @@ public class HerbUpdateDTO {
     private final String originalMemo;
     private final String newMemo;
 
+    public HerbUpdateDTO(
+            Integer rowNum,
+            String name,
+            Long originalAmount, Long newAmount,
+            LocalDate originalLastStoredDate, LocalDate newLastStoredDate,
+            String originalMemo, String newMemo
+    ) {
+        if (rowNum == null) throw new IllegalArgumentException("Herb rowNum should not be null");
+        if (rowNum < SheetsInfo.HERB.getStartRowNum() || rowNum > SheetsInfo.HERB.getEndRowNum()) throw new IllegalArgumentException("Herb rowNum should be between startRowNum and endRowNum of Herb Sheet.");
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Herb name should not be null or blank");
+
+        this.rowNum = rowNum;
+        this.name = name;
+
+        this.originalAmount = originalAmount;
+        this.newAmount = newAmount;
+
+        this.originalLastStoredDate = originalLastStoredDate;
+        this.newLastStoredDate = newLastStoredDate;
+
+        this.originalMemo = originalMemo;
+        this.newMemo = newMemo;
+    }
+
     public boolean isChanged() {
         return isAmountChanged() || isLastStoredDateChanged() || isMemoChanged();
     }
 
     public boolean isAmountChanged() {
-        return !originalAmount.equals(newAmount);
+        return !Objects.equals(originalAmount, newAmount);
     }
 
     public boolean isLastStoredDateChanged() {
-        return !originalLastStoredDate.equals(newLastStoredDate);
+        return !Objects.equals(originalLastStoredDate, newLastStoredDate);
     }
 
     public boolean isMemoChanged() {
-        return !originalMemo.equals(newMemo);
+        return !Objects.equals(originalMemo, newMemo);
     }
 }
