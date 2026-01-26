@@ -1,0 +1,233 @@
+/* src/main/resources/static/css/details.css */
+
+/* --- 타이틀 섹션 (수정됨) --- */
+.title-section {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.8rem;
+
+    /* [수정] Flexbox 로 변경하여 양끝 정렬 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* [추가] 위험 버튼 (삭제용) */
+.btn-danger {
+    background-color: #fff;
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    background-color: #d32f2f;
+    color: white;
+}
+
+/* --- 요약 정보 카드 (한 줄 보기) --- */
+.summary-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap; /* 화면이 좁을 때 줄바꿈 허용 */
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.summary-item.flex-grow {
+    flex-grow: 1; /* 메모 영역이 남은 공간 차지 */
+}
+
+.label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.amount-text {
+    font-size: 1.4rem; /* 수량 강조 */
+    color: var(--primary-color-dark, #2c3e50);
+}
+
+.memo-text {
+    font-weight: 400;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* 구분선 (세로) */
+.divider {
+    width: 1px;
+    height: 40px;
+    background-color: #eee;
+}
+
+/* --- 로그 섹션 --- */
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 1rem;
+    padding-left: 0.5rem;
+    border-left: 4px solid #aaa;
+}
+
+.table-container {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden; /* 모서리 둥글게 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.log-table th,
+.log-table td {
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.log-table th {
+    background-color: #f8f9fa;
+    color: #666;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.log-table tr:last-child td {
+    border-bottom: none;
+}
+
+.log-table tr:hover {
+    background-color: #fcfcfc;
+}
+
+.col-time {
+    color: #666;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.empty-message {
+    padding: 3rem;
+    color: #999;
+}
+
+/* --- 배지 스타일 --- */
+/* 입/출고 구분 */
+.type-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+.type-in { background-color: #e3f2fd; color: #1976d2; }
+.type-out { background-color: #ffebee; color: #c62828; }
+
+/* 변동량 */
+.diff-badge {
+    display: inline-block;
+    padding: 0.2rem 0.8rem;
+    border-radius: 15px;
+    font-weight: bold;
+    min-width: 40px;
+}
+.diff-inc { color: #1976d2; background-color: rgba(25, 118, 210, 0.05); }
+.diff-dec { color: #c62828; background-color: rgba(198, 40, 40, 0.05); }
+
+/* --- 모바일 반응형 --- */
+@media (max-width: 768px) {
+    .summary-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.2rem;
+    }
+
+    .divider {
+        display: none; /* 세로 구분선 숨김 */
+    }
+
+    .summary-item {
+        width: 100%;
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 0.8rem;
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    /* 테이블 폰트 축소 */
+    .log-table th, .log-table td {
+        padding: 0.8rem 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .col-time {
+        font-size: 0.8rem;
+    }
+}
+
+/* [추가] 모달 내부 텍스트 스타일 */
+.modal-title.warning {
+    color: #d32f2f; /* 경고 타이틀 빨간색 */
+}
+
+.sub-text {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
+/* [추가] 위험 버튼(btn-danger) 내부의 스피너 색상 보정 */
+/* 기본 스피너가 흰색이라 흰 배경에서 안 보이므로 빨간색으로 변경 */
+.btn-danger .btn-spinner {
+    border: 2px solid rgba(211, 47, 47, 0.1); /* 회전 트랙: 연한 빨강 */
+    border-top-color: #d32f2f;                /* 회전체: 진한 빨강 */
+}
+
+/* [추가] 로딩 중일 때 버튼 스타일 (선택 사항) */
+/* 클릭되어 로딩 중일 때 약간 흐리게 처리하여 비활성화 느낌 강조 */
+.btn-danger.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #fff; /* 배경 흰색 유지 */
+}

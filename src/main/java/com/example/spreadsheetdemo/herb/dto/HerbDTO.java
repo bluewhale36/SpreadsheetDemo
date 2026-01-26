@@ -10,6 +10,7 @@ import java.time.LocalDate;
  */
 @Getter
 @Builder
+@RequiredArgsConstructor // Controller 의 @RequestBody 바인딩 목적
 @ToString
 @EqualsAndHashCode
 public class HerbDTO {

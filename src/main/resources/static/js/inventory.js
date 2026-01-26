@@ -68,7 +68,8 @@ function saveChanges() {
 
     items.forEach(item => {
         const rowNum = item.querySelector('[type=hidden]').getAttribute('data-row-num');
-        const name = item.querySelector('.item-name').innerText;
+        const nameInput = item.querySelector('.item-name');
+        const name = nameInput.getAttribute('data-herb-name') || '';
 
         const dateInput = item.querySelector('.date-input');
         const originalDate = dateInput.getAttribute('data-original-date') || '-';

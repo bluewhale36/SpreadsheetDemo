@@ -67,7 +67,13 @@
         <li class="herb-item" th:each="herb : ${herbList}">
             <input type="hidden" th:data-row-num="${herb.rowNum}" />
 
-            <div class="item-name" th:text="${herb.name}"></div>
+            <div class="item-name" th:data-herb-name="${herb.name}">
+                <a th:href="@{/herb/details(name=${herb.name})}"
+                   class="name-link"
+                   th:text="${herb.name}">
+                    약재이름
+                </a>
+            </div>
 
             <div class="date-control">
                 <input type="date"

@@ -140,7 +140,6 @@
     margin-left: 4px;
 }
 
-/* 내부 요소 공통 */
 .item-name {
     font-size: 1.1rem;
     font-weight: bold;
@@ -148,6 +147,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--text-color);
+}
+
+/* [추가] 상세 이동 링크 스타일 */
+.name-link {
+    color: inherit; /* 부모(.item-name)의 색상 상속 */
+    text-decoration: none; /* 기본 밑줄 제거 */
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.name-link:hover {
+    color: var(--primary-color-dark, #2c3e50); /* 호버 시 약간 진하게 */
+    text-decoration: underline; /* 호버 시 밑줄 표시 */
+    text-underline-offset: 4px; /* 밑줄 간격 조정 */
 }
 
 .date-control {
