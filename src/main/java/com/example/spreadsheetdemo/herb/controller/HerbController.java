@@ -1,5 +1,6 @@
 package com.example.spreadsheetdemo.herb.controller;
 
+import com.example.spreadsheetdemo.herb.dto.HerbDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbRegisterDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbUpdateDTO;
 import com.example.spreadsheetdemo.herb.service.HerbService;
@@ -39,6 +40,12 @@ public class HerbController {
         return "herb/inventory";
     }
 
+    @DeleteMapping("")
+    public String deleteHerb(@RequestBody HerbDTO deleteHerbDTO) {
+        System.out.println(deleteHerbDTO);
+        return "herb/inventory";
+    }
+
     @GetMapping("/log")
     public String herbLog(
             Model model,
@@ -49,5 +56,11 @@ public class HerbController {
         model.addAttribute("from", from);   // 검색 일자 유지 목적
         model.addAttribute("to", to);       // 검색 일자 유지 목적
         return "herb/log";
+    }
+
+    @GetMapping("/details")
+    public String herbDetails(Model model, @RequestParam String name) {
+        model.addAttribute("infoDTO", herbService.getOneHerbInfo(name));
+        return "herb/details";
     }
 }

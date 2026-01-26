@@ -5,6 +5,8 @@ import com.example.spreadsheetdemo.common.enums.SheetColumnInfo;
 import com.example.spreadsheetdemo.common.util.RowMapper;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import com.example.spreadsheetdemo.herb.enums.HerbSheetColumnInfo;
+import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -27,8 +29,7 @@ public class HerbRowMapper implements RowMapper<Herb> {
                 int columnIndex = info.getColumnIndex();
 
                 if (columnIndex < row.size()) {
-                    Object value = row.get(columnIndex);
-                    info.getFieldSetter().accept(herbBuilder, value);
+                    info.getFieldSetter().accept(herbBuilder, row.get(columnIndex));
                 }
             }
         }

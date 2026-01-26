@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="|${infoDTO.herbDTO.name} - 상세 정보|">약재 상세 정보</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
+  <link rel="stylesheet" th:href="@{/css/details.css}">
+  <link rel="stylesheet" th:href="@{/css/modal.css}">
+  <script th:src="@{/js/modal.js}" defer></script>
+  <script th:src="@{/js/details.js}" defer></script>
+</head>
+<body>
+
+<header class="header">
+  <nav class="breadcrumb-nav" aria-label="breadcrumb">
+    <ol class="breadcrumb-list">
+      <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">재고 관리</a></li>
+      <li class="breadcrumb-item"><a href="/herb" class="breadcrumb-link">약재 관리</a></li>
+      <li class="breadcrumb-item active" aria-current="page">상세 정보</li>
+    </ol>
+  </nav>
+  <div class="header-actions">
+    <button type="button" class="btn btn-secondary" onclick="location.href='/herb'">목록으로</button>
+  </div>
+</header>
+
+<div class="container">
+  <input type="hidden" id="targetRowNum" th:value="${infoDTO.herbDTO.rowNum}">
+
+  <div class="title-section">
+    <h1 class="page-title" th:text="${infoDTO.herbDTO.name}">약재 이름</h1>
+
+    <button type="button" class="btn btn-danger" onclick="openDeleteModal()">
+      약재 삭제
+    </button>
+  </div>
+
+  <div class="summary-card">
+    <div class="summary-item">
+      <span class="label">마지막 입고일</span>
+      <span class="value date-text"
+            th:text="${infoDTO.herbDTO.lastStoredDate != null ? #temporals.format(infoDTO.herbDTO.lastStoredDate, 'yyyy-MM-dd') : '-'}">
+                2025-01-01
+            </span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+      <span class="label">현재 재고</span>
+      <span class="value amount-text" th:text="${infoDTO.herbDTO.amount}">100</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item flex-grow">
+      <span class="label">메모</span>
+      <span class="value memo-text"
+            th:text="${#strings.isEmpty(infoDTO.herbDTO.memo) ? '(메모 없음)' : infoDTO.herbDTO.memo}">
+                메모 내용입니다.
+            </span>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <h3 class="section-title">입출고 이력</h3>
+    <div class="table-container">
+      <table class="log-table">
+        <thead>
+        <tr>
+          <th style="width: 20%">일시</th>
+          <th style="width: 15%">구분</th>
+          <th style="width: 20%">변경 전</th>
+          <th style="width: 20%">변경 후</th>
+          <th style="width: 25%">변동량</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(infoDTO.herbLogDTOList)}">
+          <td colspan="5" class="empty-message">이력 데이터가 없습니다.</td>
+        </tr>
+        <tr th:each="log : ${infoDTO.herbLogDTOList}">
+          <td class="col-time"
+              th:text="${#temporals.format(log.loggedDateTime, 'yyyy-MM-dd HH:mm')}">
+            2025-01-01 12:00
+          </td>
+          <td>
+            <span class="type-badge"
+                  th:classappend="${log.amountIncreased} ? 'type-in' : 'type-out'"
+                  th:text="${log.amountIncreased} ? '입고' : '출고'">
+                입고
+            </span>
+          </td>
+          <td th:text="${log.beforeAmount}">10</td>
+          <td th:text="${log.afterAmount}">15</td>
+          <td>
+            <span class="diff-badge"
+                  th:classappend="${log.amountIncreased} ? 'diff-inc' : 'diff-dec'">
+                <span th:text="${log.amountIncreased} ? '+' : ''"></span>
+                <span th:text="${log.afterAmount - log.beforeAmount}">5</span>
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="height: 3rem;"></div>
+</div>
+
+<div id="deleteConfirmModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title warning">약재 삭제 확인</div>
+    </div>
+    <div class="modal-body">
+      <p>정말로 <strong th:text="${infoDTO.herbDTO.name}"></strong> 약재를 삭제하시겠습니까?</p>
+      <p class="sub-text">삭제된 데이터는 복구할 수 없으며,<br>관련된 입출고 이력도 함께 관리 대상에서 제외됩니다.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">취소</button>
+      <button type="button" class="btn btn-danger" onclick="executeDelete()">삭제하기</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  // 서버에서 전달받은 HerbDTO 객체를 자바스크립트 객체로 변환하여 할당
+  const currentHerbDTO = /*[[${infoDTO.herbDTO}]]*/ {};
+  /*]]>*/
+</script>
+
+</body>
+</html>

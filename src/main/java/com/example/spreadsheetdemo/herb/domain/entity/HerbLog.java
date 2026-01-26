@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.function.Supplier;
 
 @ToString(callSuper = true)
@@ -20,15 +21,13 @@ public class HerbLog extends SheetsEntity {
     @Getter
     private Long afterAmount;
 
+    @ToString.Exclude
     private Supplier<Herb> herbSupplier;
+    @ToString.Exclude
     private Herb cachedHerb;
 
     public Herb getHerb() {
         return cachedHerb = cachedHerb == null ? herbSupplier.get() : cachedHerb;
-    }
-
-    public HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount) {
-        this(rowNum, loggedDateTime, name, beforeAmount, afterAmount, null);
     }
 
     @Builder

@@ -37,30 +37,23 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         }
     }
 
-    public Optional<List<HerbLog>> findAllByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllColumnDataRange(startRowNum, endRowNum, null);
-        try {
-            List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
-            return result.isEmpty() ? Optional.empty() : Optional.of(result);
-        } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
-        }
-    }
-
-    public Optional<List<LocalDateTime>> findAllLoggedDateTimeByRowNumRange(int startRowNum, int endRowNum) {
-        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofSpecificDimensionDataRange(startRowNum, endRowNum, null, HerbLogSheetColumnInfo.LOGGED_DATE_TIME);
-        try {
-            List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
-            return result.isEmpty() ? Optional.empty() : Optional.of(result.stream().map(HerbLog::getLoggedDateTime).toList());
-        } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
-        }
-    }
-
     public Optional<List<HerbLog>> findAllByLoggedDateTimeBetween(LocalDate fromExclude, LocalDate toInclude) {
         Predicate<HerbLog> queryCondition =
                 (log) -> log.getLoggedDateTime().toLocalDate().isAfter(fromExclude) &&
                         (log.getLoggedDateTime().toLocalDate().isBefore(toInclude) || log.getLoggedDateTime().toLocalDate().isEqual(toInclude));
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataRange(queryCondition);
+        try {
+            List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
+            return result.isEmpty() ?
+                    Optional.empty() :
+                    Optional.of(result.stream().sorted(Comparator.comparing(HerbLog::getLoggedDateTime).reversed()).toList());
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+        }
+    }
+
+    public Optional<List<HerbLog>> findAllByName(String name) {
+        Predicate<HerbLog> queryCondition = (log) -> log.getName().equals(name);
         HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataRange(queryCondition);
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);

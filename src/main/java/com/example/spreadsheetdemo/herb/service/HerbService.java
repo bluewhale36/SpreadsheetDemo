@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,19 @@ public class HerbService {
             entityList = herbRepository.findAllByNameContains(keyword).orElse(List.of());
         }
         return entityList.stream().map(HerbDTO::from).toList();
+    }
+
+    public HerbInfoDTO getOneHerbInfo(String name) {
+        Herb entity = herbRepository.findAllByName(name)
+                .orElseThrow(() -> new IllegalArgumentException(name + " 의 약재 정보를 찾을 수 없습니다."))
+                .get(0);
+        HerbDTO herbDTO = HerbDTO.from(entity);
+        List<HerbLogDTO> herbLogDTOList = herbLogRepository.findAllByName(name)
+                .orElse(List.of())
+                .stream()
+                .map(HerbLogDTO::from)
+                .toList();
+        return HerbInfoDTO.of(herbDTO, herbLogDTOList);
     }
 
     /**
@@ -189,13 +203,13 @@ public class HerbService {
      * @return 수정된 약재 정보 리스트
      */
     private List<Herb> updateHerbWithOptimisticLocking(List<HerbUpdateDTO> dtoList) {
-        List<HerbDTO> expectedHerbDTOList = dtoList.stream().map(HerbDTO::from).toList(), actualHerbDTOList;
+        List<HerbDTO> expectedHerbDTOList = dtoList.stream().map(HerbDTO::from).sorted(Comparator.comparing(HerbDTO::getRowNum)).toList(), actualHerbDTOList;
         List<Herb> entityList = herbRepository
                         .findAllByRowNums(
                                 dtoList.stream().map(HerbUpdateDTO::getRowNum).collect(Collectors.toSet())
                         )
                         .orElse(List.of());
-        actualHerbDTOList = entityList.stream().map(HerbDTO::from).toList();
+        actualHerbDTOList = entityList.stream().map(HerbDTO::from).sorted(Comparator.comparing(HerbDTO::getRowNum)).toList();
 
         if (expectedHerbDTOList.equals(actualHerbDTOList)) {
             return doUpdateHerb(dtoList);
