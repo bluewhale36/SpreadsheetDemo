@@ -21,6 +21,8 @@
     max-width: 100%;
     transition: all 0.2s;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    /* [추가] 내부 요소 간 간격 추가 */
+    gap: 0.5rem;
 }
 
 .search-form:focus-within {
@@ -38,14 +40,49 @@
     min-width: 0; /* flex 자식 요소 오버플로우 방지 */
 }
 
+/* [추가] 초기화 버튼 스타일 (log.css와 동일) */
+.reset-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.2rem;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    transition: all 0.2s;
+    /* 입력창이 늘어날 때 버튼 크기 고정 */
+    flex-shrink: 0;
+}
+
+.reset-btn:hover {
+    background-color: #f0f0f0;
+    color: var(--danger-color, #d32f2f); /* 붉은색 강조 */
+}
+
+/* [수정] 검색 버튼 스타일 미세 조정 */
 .search-btn {
     border: none;
     background: transparent;
     cursor: pointer;
     font-size: 1.1rem;
     padding: 0;
-    margin-left: 0.5rem;
+    /* margin-left: 0.5rem; -> gap으로 대체하므로 제거하거나 줄임 */
+    margin-left: 0;
     color: #888;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.search-btn:hover {
+    color: var(--primary-color-dark, #555);
+    transform: scale(1.1);
+    transition: transform 0.2s;
 }
 
 /* [반응형] 모바일 툴바: 세로 배치 */
@@ -85,6 +122,22 @@
     grid-template-columns: 200px 160px 140px 1fr;
     align-items: center;
     gap: 1.5rem;
+
+    transition: border-left-color 0.3s, background-color 0.3s; /* 부드러운 전환 효과 */
+}
+
+/* [추가] 수정된 상태 스타일 */
+.herb-item.modified {
+    border-left-color: #ff9800; /* 변경 시 주황색으로 강조 */
+    background-color: #fffdf5; /* 배경색 아주 살짝 웜톤으로 변경 (선택사항) */
+}
+
+/* [추가] 수정 시 이름 옆에 별표(*) 표시 */
+.herb-item.modified .item-name::after {
+    content: ' *';
+    color: #ff9800;
+    font-weight: bold;
+    margin-left: 4px;
 }
 
 /* 내부 요소 공통 */

@@ -43,7 +43,10 @@ public class HerbRowMapper implements RowMapper<Herb> {
         }
 
         List<Object> row = List.of(
-                herb.getName(), herb.getAmount(), herb.getLastStoredDate().toString(), herb.getMemo()
+                herb.getName(),
+                herb.getAmount(),
+                herb.getLastStoredDate() == null ? "" : herb.getLastStoredDate().toString(),
+                herb.getMemo() == null ? "" : herb.getMemo()
         );
         return Collections.singletonList(row);
     }

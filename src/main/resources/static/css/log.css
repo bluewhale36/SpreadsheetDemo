@@ -45,33 +45,27 @@
 .log-date-badge {
     background-color: var(--primary-color);
     color: var(--text-color);
-    font-size: 0.85rem;
+    font-size: 1rem;
     padding: 0.2rem 0.6rem;
     border-radius: 12px;
     font-weight: 600;
     margin-right: 0.8rem;
 }
 
-/* --- 애니메이션 Wrapper --- */
+/* --- 상세 내용 영역 (아코디언 바디) --- */
 .log-content-wrapper {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    visibility: hidden;
-    padding: 0;
-    background-color: #fafafa;
-    border-top: none;
-    transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: #fcfcfc;
 }
-
 .log-date-details.open .log-content-wrapper {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    visibility: visible;
-    border-top: 1px solid var(--border-color);
+    max-height: 5000px; /* 로그가 많을 수 있으므로 넉넉하게 */
+    transition: max-height 0.5s ease-in;
 }
 
 .log-content-inner {
+    background-color: #fcfcfc;;
     overflow: hidden;
     padding: 1.5rem;
     display: flex;
@@ -95,6 +89,10 @@
     margin-bottom: 0.8rem;
     padding-left: 0.5rem;
     border-left: 4px solid var(--primary-color);
+}
+
+.log-content-inner .log-item:not(:first-child) .log-herb-name {
+    margin-top: 1rem;
 }
 
 /* --- 그리드 레이아웃 (반응형) --- */
@@ -148,57 +146,120 @@
 .val-dec { background-color: rgba(244, 67, 54, 0.1); color: #D32F2F; }
 .val-diff { font-size: 0.8rem; opacity: 0.8; }
 
-/* 모바일 대응 */
-@media (max-width: 600px) {
-    .change-grid {
-        font-size: 0.85rem;
-        grid-template-columns: 60px 1fr 1fr; /* 항목 컬럼 제거 */
-    }
-    .change-grid > .grid-cell:nth-child(4n+1) { display: none; } /* 첫번째 컬럼(항목) 숨김 */
-
-    .log-content-inner { padding: 1rem; }
-    .log-date-summary { padding: 0.8rem 1rem; }
-}
-
-/* [추가] 더 보기 버튼 컨테이너 */
-.more-btn-box {
+/* --- [추가] 검색 툴바 --- */
+.toolbar {
     display: flex;
-    justify-content: center;
-    margin-top: 2rem;
-    padding-bottom: 2rem;
+    justify-content: flex-end; /* 우측 정렬 */
+    margin-bottom: 1.5rem;
 }
 
-/* 더 보기 버튼 스타일 */
-.btn-more {
+/* 검색 폼 컨테이너 (Inventory 스타일 차용) */
+/* [수정] 검색 폼 컨테이너: 패딩 미세 조정 (버튼 추가 공간 확보) */
+.date-search-form {
+    display: flex;
+    align-items: center;
     background-color: white;
     border: 1px solid var(--border-color);
-    color: #666;
-    padding: 0.8rem 2rem;
-    border-radius: 2rem; /* 둥근 알약 모양 */
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    border-radius: 25px;
+    padding: 0.4rem 1rem; /* 상하 패딩 약간 축소, 좌우 유지 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    gap: 0.5rem; /* 내부 요소 간 간격 추가 */
+}
+
+.date-search-form:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(243, 221, 129, 0.3);
+}
+
+/* 날짜 입력 그룹 */
+.date-input-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.btn-more:hover {
-    background-color: #f9f9f9;
-    border-color: #ccc;
+/* 날짜 구분자 (~) */
+.date-separator {
+    color: #888;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* 날짜 입력 필드 (기본 스타일 제거 및 통합) */
+.search-date-input {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
     color: var(--text-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    outline: none;
+    cursor: pointer;
+    /* 브라우저 기본 캘린더 아이콘 정렬 등 미세 조정 */
+    padding: 0 0.2rem;
 }
 
-.btn-more:active {
-    transform: translateY(0);
+/* [추가] 초기화 버튼 스타일 */
+.reset-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.2rem;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* 원형 호버 효과를 위해 */
+    width: 24px;
+    height: 24px;
+    transition: all 0.2s;
 }
 
-/* 로딩 중일 때 버튼 스타일 (선택사항) */
-.btn-more.loading {
-    opacity: 0.7;
-    pointer-events: none;
+.reset-btn:hover {
+    background-color: #f0f0f0;
+    color: var(--danger-color, #d32f2f); /* 붉은색으로 강조 */
+}
+
+/* [수정] 검색 버튼 스타일 조정 */
+.search-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0;
+    margin-left: 0.2rem; /* 간격은 gap으로 대체되었으나 미세 조정용 */
+    color: #888;
+    display: flex;
+    align-items: center;
+}
+.search-btn:hover {
+    color: var(--primary-color-dark, #555);
+    transform: scale(1.1); /* 살짝 커지는 효과 */
+    transition: transform 0.2s;
+}
+
+/* --- 모바일 대응 --- */
+@media (max-width: 600px) {
+    /* 기존 스타일 유지 */
+    .change-grid {
+        font-size: 0.85rem;
+        grid-template-columns: 60px 1fr 1fr;
+    }
+    .change-grid > .grid-cell:nth-child(4n+1) { display: none; }
+    .log-content-inner { padding: 1rem; }
+    .log-date-summary { padding: 0.8rem 1rem; }
+
+    /* [추가] 툴바 모바일 대응 */
+    .toolbar {
+        justify-content: center; /* 중앙 정렬 */
+    }
+    .date-search-form {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .search-date-input {
+        font-size: 0.9rem; /* 폰트 살짝 축소 */
+        width: 130px; /* 너비 확보 */
+    }
 }

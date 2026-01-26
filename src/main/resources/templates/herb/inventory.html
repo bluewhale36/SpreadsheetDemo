@@ -46,8 +46,16 @@
                    name="keyword"
                    class="search-input"
                    placeholder="이름으로 검색"
-                   th:value="${keyword}">
-            <button type="submit" class="search-btn">🔍</button>
+                   th:value="${keyword}"
+                   aria-label="약재 이름 검색">
+
+            <button type="button" class="reset-btn" onclick="location.href='/herb'"
+                    title="검색 초기화"
+                    th:if="${keyword != null && !#strings.isEmpty(keyword)}">
+                ✕
+            </button>
+
+            <button type="submit" class="search-btn" title="검색">🔍</button>
         </form>
     </div>
 

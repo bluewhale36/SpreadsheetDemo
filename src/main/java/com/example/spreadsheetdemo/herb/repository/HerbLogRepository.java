@@ -13,10 +13,13 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @Component
 @RequiredArgsConstructor
@@ -49,6 +52,21 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         try {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.isEmpty() ? Optional.empty() : Optional.of(result.stream().map(HerbLog::getLoggedDateTime).toList());
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+        }
+    }
+
+    public Optional<List<HerbLog>> findAllByLoggedDateTimeBetween(LocalDate fromExclude, LocalDate toInclude) {
+        Predicate<HerbLog> queryCondition =
+                (log) -> log.getLoggedDateTime().toLocalDate().isAfter(fromExclude) &&
+                        (log.getLoggedDateTime().toLocalDate().isBefore(toInclude) || log.getLoggedDateTime().toLocalDate().isEqual(toInclude));
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllDataRange(queryCondition);
+        try {
+            List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
+            return result.isEmpty() ?
+                    Optional.empty() :
+                    Optional.of(result.stream().sorted(Comparator.comparing(HerbLog::getLoggedDateTime).reversed()).toList());
         } catch (GeneralSecurityException | IOException e) {
             throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
         }

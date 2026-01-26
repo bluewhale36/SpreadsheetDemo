@@ -1,8 +1,5 @@
 package com.example.spreadsheetdemo.herb.controller;
 
-import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
-import com.example.spreadsheetdemo.herb.dto.HerbDTO;
-import com.example.spreadsheetdemo.herb.dto.HerbLogViewDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbRegisterDTO;
 import com.example.spreadsheetdemo.herb.dto.HerbUpdateDTO;
 import com.example.spreadsheetdemo.herb.service.HerbService;
@@ -12,8 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -25,20 +22,8 @@ public class HerbController {
 
     @GetMapping("")
     public String herb(Model model, @RequestParam(required = false) String keyword) {
-
-        List<HerbDTO> allHerbList = herbService.getAllHerbs();
-
-        // 2. 검색어 필터링
-        List<HerbDTO> filteredHerbs = allHerbList;
-        if (keyword != null && !keyword.isBlank()) {
-            filteredHerbs = allHerbList.stream()
-                    .filter(h -> h.getName().contains(keyword))
-                    .collect(Collectors.toList());
-        }
-
-        model.addAttribute("herbList", filteredHerbs);
-        // 검색어 유지
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("herbList", herbService.getHerbs(keyword));
+        model.addAttribute("keyword", keyword);     // 검색어 유지 목적
         return "herb/inventory";
     }
 
@@ -55,16 +40,14 @@ public class HerbController {
     }
 
     @GetMapping("/log")
-    public String herbLog(Model model) {
-        HerbLogPagination pagination = herbService.getHerbLogs(null);
-
-        System.out.println(pagination);
-
-        model.addAttribute("pagination", pagination);
-
+    public String herbLog(
+            Model model,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        model.addAttribute("herbLogViewDTOList", herbService.getHerbLogs(from, to));
+        model.addAttribute("from", from);   // 검색 일자 유지 목적
+        model.addAttribute("to", to);       // 검색 일자 유지 목적
         return "herb/log";
-
-//        model.addAttribute("pagination", pagination);
-//        return "herb/log";
     }
 }
