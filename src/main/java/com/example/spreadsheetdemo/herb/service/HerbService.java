@@ -1,22 +1,17 @@
 package com.example.spreadsheetdemo.herb.service;
 
-import com.example.spreadsheetdemo.common.enums.SheetsInfo;
 import com.example.spreadsheetdemo.common.exception.GoogleSpreadsheetsAPIException;
 import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
-import com.example.spreadsheetdemo.herb.domain.HerbLogPagination;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import com.example.spreadsheetdemo.herb.domain.entity.HerbLog;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
 import com.example.spreadsheetdemo.herb.repository.HerbRepository;
-import com.google.api.services.sheets.v4.model.ValueRange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,19 +27,14 @@ public class HerbService {
     private final HerbLogRepository herbLogRepository;
 
 
-    /**
-     * 약재 정보가 담긴 스프레드시트의 모든 행을 조회.
-     *
-     * @return 스프레드시트의 모든 행 정보 {@link ValueRange}.
-     */
-    public List<HerbDTO> getAllHerbs() {
-        List<Herb> entityList = herbRepository.findAll();
+    public List<HerbDTO> getHerbs(String keyword) {
+        List<Herb> entityList;
+        if (keyword == null || keyword.isBlank()) {
+            entityList = herbRepository.findAll();
+        } else {
+            entityList = herbRepository.findAllByNameContains(keyword).orElse(List.of());
+        }
         return entityList.stream().map(HerbDTO::from).toList();
-    }
-
-    public HerbDTO getHerbByRowNum(Integer rowNum) {
-        Herb entity = herbRepository.findByRowNum(rowNum);
-        return HerbDTO.from(entity);
     }
 
     /**
@@ -257,119 +247,15 @@ public class HerbService {
         herbRepository.saveAll(rollingBackEntityList);
     }
 
-    /**
-     * 약재 수정 로그 시트의 페이징 처리된 행을 조회.
-     *
-     * @return 해당 페이지의 로그 정보를 담은 리스트.
-     */
-    public HerbLogPagination getHerbLogs(LocalDate stdDate) {
-        try {
+    public List<HerbLogViewDTO> getHerbLogs(LocalDate from, LocalDate to) {
+        LocalDate
+                toInclude = to == null ? LocalDate.now() : to,
+                fromExclude = from == null ? toInclude.minusMonths(1) : from.minusDays(1);
 
-            LocalDate toInclude = stdDate == null ? LocalDate.now() : stdDate, fromExclude = toInclude.minusMonths(1);
+        List<HerbLog> entityList = herbLogRepository.findAllByLoggedDateTimeBetween(fromExclude, toInclude).orElse(List.of());
 
-            /*
-                1. endRowNum 계산
-             */
-            int endRowNum = getEndRowNumForHerbLogPagination(fromExclude, toInclude);
-
-            /*
-                2. startRowNum 계산
-             */
-            int startRowNum = getStartRowNumForHerbLogPagination(fromExclude, toInclude, endRowNum);
-
-            /*
-                3. 해당 범위의 로그 데이터 조회
-             */
-            List<HerbLog> entityList = herbLogRepository.findAllByRowNumRange(startRowNum, endRowNum).orElse(List.of());
-            // 변환 및 반환
-            List<HerbLogDTO> herbLogDTOList = entityList.stream().map(HerbLogDTO::from).toList();
-
-            return HerbLogPagination.of(HerbLogViewDTO.from(herbLogDTOList), startRowNum, endRowNum, toInclude, fromExclude);
-        } catch (GeneralSecurityException | IOException e) {
-            log.error("Error fetching herb log data: {}", e.getMessage());
-            throw new GoogleSpreadsheetsAPIException("약재 재고 로그 정보를 불러오는 데 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
-        }
+        return HerbLogViewDTO.from(entityList.stream().map(HerbLogDTO::from).toList());
     }
 
-    // 한번에 조회할 행 단위
-    int chunkSize = 500;
-
-    private int getEndRowNumForHerbLogPagination(LocalDate fromExclude, LocalDate toInclude) throws GeneralSecurityException, IOException {
-        int endRowNum;
-        // 역순으로 chunkSize 만큼 일자 조회하면서 toInclude 일자가 포함된 마지막 행 번호 계산
-        int tmpEndRowNum = herbLogRepository.countAll() + (SheetsInfo.HERB_LOG.getStartRowNum() -1);
-        System.out.println("\n\ntmpEndRowNum : " + tmpEndRowNum + "\n\n");
-        for (int i = 1; ; i++) {
-
-            if (i > 1)  tmpEndRowNum = Math.max(tmpEndRowNum - chunkSize, 2);
-
-            // 로그 일자 조회
-            List<LocalDateTime> loggedDateTimeList = herbLogRepository.findAllLoggedDateTimeByRowNumRange(tmpEndRowNum - chunkSize +1, tmpEndRowNum).orElse(List.of());
-
-            List<LocalDate> loggedDateList = loggedDateTimeList.stream().map(LocalDate::from).toList();
-
-            // toInclude 일자와 fromExclude 일자 사이에 있는 로그 일자만 필터링
-            List<LocalDate> filteredLoggedDateList = loggedDateList.stream()
-                    .filter(
-                            date -> (
-                                    (date.isBefore(toInclude) || date.isEqual(toInclude)) && date.isAfter(fromExclude)
-                            )
-                    )
-                    .toList();
-
-            if (!filteredLoggedDateList.isEmpty()) {
-                // toInclude 포함 이전 일자 또는 fromExclude 이후 일자 중 최신 일자 조회
-                LocalDate validToInclude = filteredLoggedDateList.stream().max(LocalDate::compareTo).get();
-
-                int lastIndex = loggedDateList.lastIndexOf(validToInclude);
-
-                if (lastIndex != -1) {
-                    // 포함할 마지막 일자가 조회된 경우 해당 인덱스를 기준으로 endRowNum 계산
-                    endRowNum = tmpEndRowNum -( loggedDateList.size() -1 - lastIndex );
-                    break;
-                } else if (tmpEndRowNum == 2) {
-                    endRowNum = tmpEndRowNum;
-                    break;
-                }
-            }
-        }
-        return endRowNum;
-    }
-
-    private int getStartRowNumForHerbLogPagination(LocalDate fromExclude, LocalDate toInclude, int endRowNum) throws GeneralSecurityException, IOException {
-        int startRowNum;
-        int tmpStartRowNum;
-        for (int i = 1; ; i++) {
-
-            tmpStartRowNum = Math.max(endRowNum - i*chunkSize +1, 2);
-
-            // 로그 일자 조회
-            List<LocalDateTime> loggedDateTimeList = herbLogRepository.findAllLoggedDateTimeByRowNumRange(tmpStartRowNum, endRowNum).orElse(List.of());
-            List<LocalDate> loggedDateList = loggedDateTimeList.stream().map(LocalDate::from).toList();
-            // toInclude 일자와 fromExclude 일자 사이에 있는 로그 일자만 필터링
-            List<LocalDate> filteredLoggedDateList = loggedDateList.stream()
-                    .filter(
-                            date -> (
-                                    (date.isBefore(toInclude) || date.isEqual(toInclude)) && date.isAfter(fromExclude)
-                            )
-                    )
-                    .toList();
-
-            if (loggedDateList.size() != filteredLoggedDateList.size()) {
-                // 두 리스트의 개수가 다를 경우 범위 내에 포함되지 않는 일자가 존재함
-                // -> 해당 일자 내 데이터가 모두 조회되므로 startRowNum 계산
-                LocalDate validFromExclude = filteredLoggedDateList.stream().min(LocalDate::compareTo).get();
-
-                int firstIndex = loggedDateList.indexOf(validFromExclude);
-                startRowNum = tmpStartRowNum + firstIndex;
-                break;
-            } else if (tmpStartRowNum == 2) {
-                // 시작 행 번호가 2인 경우 더 이상 범위를 넓힐 수 없음 -> 전체 범위 조회
-                startRowNum = tmpStartRowNum;
-                break;
-            }
-        }
-        return startRowNum;
-    }
 
 }

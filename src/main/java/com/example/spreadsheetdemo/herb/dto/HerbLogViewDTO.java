@@ -33,7 +33,7 @@ public class HerbLogViewDTO {
 
     /**
      * HerbLogDTO 리스트를 HerbLogViewDTO 리스트로 변환.<br/>
-     * {@link HerbLogDTO#loggedDatetime} 필드 값을 기준으로 일자 별로 그룹화하고,
+     * {@link HerbLogDTO#loggedDateTime} 필드 값을 기준으로 일자 별로 그룹화하고,
      * 각 일자 내에서는 약재 이름 별로 그룹화하여 변환된 리스트를 반환한다.<br/>
      *
      *

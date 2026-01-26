@@ -58,8 +58,18 @@ public class HerbRepository implements SheetsRepository<Herb> {
     }
 
     public Optional<List<Herb>> findAllByName(String name) {
+        Predicate<Herb> queryCondition = (herb) -> herb.getName().equals(name);
         try {
-            Predicate<Herb> queryCondition = (herb) -> herb.getName().equals(name);
+            List<Herb> result = dqo.select(HerbQuerySpec.ofAllDataRange(queryCondition), herbRowMapper);
+            return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
+        }
+    }
+
+    public Optional<List<Herb>> findAllByNameContains(String keyword) {
+        Predicate<Herb> queryCondition = (herb) -> herb.getName().contains(keyword);
+        try {
             List<Herb> result = dqo.select(HerbQuerySpec.ofAllDataRange(queryCondition), herbRowMapper);
             return result == null || result.isEmpty() ? Optional.empty() : Optional.of(result);
         } catch (GeneralSecurityException | IOException e) {

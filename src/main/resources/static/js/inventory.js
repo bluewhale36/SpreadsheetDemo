@@ -1,4 +1,48 @@
-// 수량 변경 버튼 핸들러
+document.addEventListener('DOMContentLoaded', () => {
+    // [추가] 페이지 로드 시 모든 입력 필드에 변경 감지 이벤트 연결
+    const inputs = document.querySelectorAll('.date-input, .memo-input, .qty-input');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const item = this.closest('.herb-item');
+            checkModifiedState(item);
+        });
+        // 날짜 선택 등은 change 이벤트도 감지
+        input.addEventListener('change', function() {
+            const item = this.closest('.herb-item');
+            checkModifiedState(item);
+        });
+    });
+});
+
+// [신규] 해당 행(Row)이 수정되었는지 확인하고 스타일 적용
+function checkModifiedState(item) {
+    const dateInput = item.querySelector('.date-input');
+    const qtyInput = item.querySelector('.qty-input');
+    const memoInput = item.querySelector('.memo-input');
+
+    // 원본 값 가져오기
+    const originalDate = dateInput.getAttribute('data-original-date') || '-';
+    const originalAmount = parseInt(qtyInput.getAttribute('data-original-amount')) || 0;
+    const originalMemo = memoInput.getAttribute('data-original-memo') || '';
+
+    // 현재 값 가져오기
+    const currDate = dateInput.value || '-';
+    const currAmount = parseInt(qtyInput.value) || 0;
+    const currMemo = memoInput.value || '';
+
+    // 하나라도 다르면 수정된 것으로 간주
+    const isChanged = (originalDate !== currDate) ||
+        (originalAmount !== currAmount) ||
+        (originalMemo !== currMemo);
+
+    if (isChanged) {
+        item.classList.add('modified');
+    } else {
+        item.classList.remove('modified');
+    }
+}
+
+// 수량 변경 버튼 핸들러 (수정됨)
 function updateQuantity(btn, change) {
     const wrapper = btn.closest('.quantity-control');
     const input = wrapper.querySelector('.qty-input');
@@ -6,6 +50,11 @@ function updateQuantity(btn, change) {
     let newValue = currentValue + change;
     if (newValue < 0) newValue = 0;
     input.value = newValue;
+
+    // [추가] 수량 변경 후 상태 체크 트리거
+    // 버튼은 quantity-control 안에 있으므로, herb-item을 찾아서 넘김
+    const item = btn.closest('.herb-item');
+    checkModifiedState(item);
 }
 
 // 변경사항 수집 및 모달 표시
@@ -30,9 +79,17 @@ function saveChanges() {
         const newAmount = parseInt(qtyInput.value) || 0;
 
         const memoInput = item.querySelector('.memo-input');
-        const originalMemo = memoInput.getAttribute('data-original-memo') || '';
-        const newMemo = memoInput.value || '';
+        let originalMemo = memoInput.getAttribute('data-original-memo');
+        if (!originalMemo || originalMemo.trim() === '') {
+            originalMemo = null;
+        }
 
+        let newMemo = memoInput.value;
+        if (!newMemo || newMemo.trim() === '') {
+            newMemo = null;
+        }
+
+        // 비교 로직도 null 체크를 고려하여 수행
         const isDateChanged = originalDate !== newDate;
         const isQtyChanged = originalAmount !== newAmount;
         const isMemoChanged = originalMemo !== newMemo;
