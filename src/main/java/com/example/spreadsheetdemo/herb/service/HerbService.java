@@ -41,6 +41,8 @@ public class HerbService {
     }
 
     public HerbInfoDTO getOneHerbInfo(String name) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("name should not be null while getting Herb.");
+
         Herb entity = herbRepository.findAllByName(name)
                 .orElseThrow(() -> new IllegalArgumentException(name + " 의 약재 정보를 찾을 수 없습니다."))
                 .get(0);
@@ -271,6 +273,8 @@ public class HerbService {
     }
 
     public void hardDeleteOneHerb(HerbDTO deletingHerbDTO) {
+        if (deletingHerbDTO == null) throw new IllegalArgumentException("HerbDTO should not be null for deletion.");
+
         transactionalHardDeleteOneHerb(deletingHerbDTO);
     }
 

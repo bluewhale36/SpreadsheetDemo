@@ -8,6 +8,8 @@ public class ColumnUtils {
 
     // A, B, 등 컬럼 알파벳을 0-based index 값으로 변환
     public static int toIndex(String column) {
+        if (column == null || column.isBlank()) throw new IllegalArgumentException("Column string should not be null or empty");
+
         int result = 0;
         for (int i = 0; i < column.length(); i++) {
             result *= 26;

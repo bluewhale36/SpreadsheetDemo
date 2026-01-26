@@ -16,7 +16,7 @@ public enum HerbLogSheetColumnInfo implements SheetColumnInfo {
 
     LOGGED_DATE_TIME(
             "logged_datetime", LocalDateTime.class, "A",
-            obj -> ColumnUtils.parseDateTime(obj.toString()),
+            obj -> (obj == null) ? null : ColumnUtils.parseDateTime(obj.toString()),
             (builder, value) -> builder.loggedDateTime(ColumnUtils.parseDateTime(value.toString()))
     ),
     NAME(
@@ -26,12 +26,12 @@ public enum HerbLogSheetColumnInfo implements SheetColumnInfo {
     ),
     BEFORE_AMOUNT(
             "before_amount", Long.class, "C",
-            obj -> ColumnUtils.parseLong(obj.toString()),
+            obj -> (obj == null) ? null : ColumnUtils.parseLong(obj.toString()),
             (builder, value) -> builder.beforeAmount(ColumnUtils.parseLong(value.toString()))
     ),
     AFTER_AMOUNT(
             "after_amount", Long.class, "D",
-            obj -> ColumnUtils.parseLong(obj.toString()),
+            obj -> (obj == null) ? null : ColumnUtils.parseLong(obj.toString()),
             (builder, value) -> builder.afterAmount(ColumnUtils.parseLong(value.toString()))
     );
 
