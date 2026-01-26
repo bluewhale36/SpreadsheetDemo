@@ -144,4 +144,15 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
     public HerbLog deleteOne(HerbLog entity) {
         return null;
     }
+
+    public Optional<List<HerbLog>> deleteAllByName(String name) {
+        Predicate<HerbLog> queryCondition = (log) -> log.getName().equals(name);
+        HerbLogQuerySpec querySpec = HerbLogQuerySpec.ofAllRowDataRange(queryCondition);
+        try {
+            List<HerbLog> deletedEntityList = dqo.delete(querySpec, herbLogRowMapper);
+            return deletedEntityList.isEmpty() ? Optional.empty() : Optional.of(deletedEntityList);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
+        }
+    }
 }

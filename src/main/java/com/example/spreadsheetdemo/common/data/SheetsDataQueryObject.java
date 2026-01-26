@@ -121,8 +121,6 @@ public class SheetsDataQueryObject {
         String selectedRange = value.getRange();
         List<List<Object>> data = value.getValues();
 
-        System.out.println(value.toPrettyString());
-
         Integer startedRowNum = extractRowNumFromRange(selectedRange);
         if (startedRowNum == null) {
             throw new IllegalStateException("조회 오류");

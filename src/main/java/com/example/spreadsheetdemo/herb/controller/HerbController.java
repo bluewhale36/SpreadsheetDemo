@@ -43,6 +43,7 @@ public class HerbController {
     @DeleteMapping("")
     public String deleteHerb(@RequestBody HerbDTO deleteHerbDTO) {
         System.out.println(deleteHerbDTO);
+        herbService.hardDeleteOneHerb(deleteHerbDTO);
         return "herb/inventory";
     }
 

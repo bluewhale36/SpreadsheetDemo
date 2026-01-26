@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -259,6 +261,59 @@ public class HerbService {
                         )
                         .toList();
         herbRepository.saveAll(rollingBackEntityList);
+    }
+
+    public void hardDeleteOneHerb(HerbDTO deletingHerbDTO) {
+        transactionalHardDeleteOneHerb(deletingHerbDTO);
+    }
+
+    private void transactionalHardDeleteOneHerb(HerbDTO deletingHerbDTO) {
+        try {
+            hardDeleteWithOptimisticLocking(deletingHerbDTO);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new GoogleSpreadsheetsAPIException("약재 삭제에 실패했습니다.\n잠시 뒤 다시 시도해주세요.", e);
+        }
+
+        try {
+            deleteLogsForOneHerb(deletingHerbDTO);
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("Error deleting herb log data : {}", e.getMessage());
+            log.warn("Attempting to rollback herb deletion...");
+
+            try {
+                rollbackHerbDeletion(deletingHerbDTO);
+            } catch (GeneralSecurityException | IOException e1) {
+                // 롤백 실패
+                log.error("[CRITICAL] Deletion Rollback failed : {}", e1.getMessage());
+                throw new RollbackFailedException("약재 삭제에 실패하여 데이터 자동 복구를 시도하였으나 실패했습니다.\n수동 복구가 필요합니다.", e1);
+            }
+
+            // 롤백 성공
+            log.info("Deletion Rollback successful");
+            throw new GoogleSpreadsheetsAPIException("약재 삭제에 실패했습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
+    }
+
+    private void hardDeleteWithOptimisticLocking(HerbDTO deletingHerbDTO) throws GeneralSecurityException, IOException {
+        HerbDTO actualHerb = HerbDTO.from(herbRepository.findByRowNum(deletingHerbDTO.getRowNum()));
+        if (!deletingHerbDTO.equals(actualHerb)) {
+            throw new OptimisticLockingException("약재 삭제에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
+        }
+        herbRepository.deleteByRowNum(deletingHerbDTO.getRowNum());
+    }
+
+    private void deleteLogsForOneHerb(HerbDTO herbDTO) throws GeneralSecurityException, IOException {
+        herbLogRepository.deleteAllByName(herbDTO.getName());
+    }
+
+    private void rollbackHerbDeletion(HerbDTO rollingBackDTO) throws GeneralSecurityException, IOException {
+        HerbRegisterDTO restore = HerbRegisterDTO.builder()
+                .name(rollingBackDTO.getName())
+                .amount(rollingBackDTO.getAmount())
+                .lastStoredDate(rollingBackDTO.getLastStoredDate())
+                .memo(rollingBackDTO.getMemo())
+                .build();
+        herbRepository.save(Herb.create(restore));
     }
 
     public List<HerbLogViewDTO> getHerbLogs(LocalDate from, LocalDate to) {

@@ -216,3 +216,18 @@
     margin-top: 0.5rem;
     line-height: 1.4;
 }
+
+/* [추가] 위험 버튼(btn-danger) 내부의 스피너 색상 보정 */
+/* 기본 스피너가 흰색이라 흰 배경에서 안 보이므로 빨간색으로 변경 */
+.btn-danger .btn-spinner {
+    border: 2px solid rgba(211, 47, 47, 0.1); /* 회전 트랙: 연한 빨강 */
+    border-top-color: #d32f2f;                /* 회전체: 진한 빨강 */
+}
+
+/* [추가] 로딩 중일 때 버튼 스타일 (선택 사항) */
+/* 클릭되어 로딩 중일 때 약간 흐리게 처리하여 비활성화 느낌 강조 */
+.btn-danger.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #fff; /* 배경 흰색 유지 */
+}
