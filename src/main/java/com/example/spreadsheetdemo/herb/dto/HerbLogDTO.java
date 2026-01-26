@@ -27,6 +27,8 @@ public class HerbLogDTO {
     }
 
     public static HerbLogDTO from(HerbLog herbLog) {
+        if (herbLog == null) return null;
+
         return HerbLogDTO.builder()
                 .loggedDateTime(herbLog.getLoggedDateTime())
                 .name(herbLog.getName())

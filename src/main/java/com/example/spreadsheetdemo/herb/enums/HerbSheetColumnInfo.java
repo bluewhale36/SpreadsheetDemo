@@ -16,22 +16,22 @@ public enum HerbSheetColumnInfo implements SheetColumnInfo {
 
     NAME(
             "name", String.class, "A",
-            Object::toString,
+            obj -> (obj == null) ? null : obj.toString(),
             (builder, value) -> builder.name(value.toString())
     ),
     AMOUNT(
             "amount", Long.class, "B",
-            obj -> ColumnUtils.parseLong(obj.toString()),
+            obj -> (obj == null) ? null : ColumnUtils.parseLong(obj.toString()),
             (builder, value) -> builder.amount(ColumnUtils.parseLong(value.toString()))
     ),
     LAST_STORED_DATE(
             "last_stored_date", LocalDate.class, "C",
-            obj -> ColumnUtils.parseDate(obj.toString()),
+            obj -> (obj == null) ? null : ColumnUtils.parseDate(obj.toString()),
             (builder, value) -> builder.lastStoredDate(ColumnUtils.parseDate(value.toString()))
     ),
     MEMO(
             "memo", String.class, "D",
-            Object::toString,
+            obj -> (obj == null) ? null : obj.toString(),
             (builder, value) -> builder.memo(value.toString())
     );
 

@@ -27,16 +27,27 @@ public class HerbLog extends SheetsEntity {
     private Herb cachedHerb;
 
     public Herb getHerb() {
-        return cachedHerb = cachedHerb == null ? herbSupplier.get() : cachedHerb;
+        if (cachedHerb == null) {
+            if (herbSupplier == null) {
+                throw new IllegalStateException("Tried to get Herb entity while herbSupplier has not been injected.");
+            }
+            cachedHerb = herbSupplier.get();
+        }
+        return cachedHerb;
     }
 
     @Builder
     public HerbLog(Integer rowNum, LocalDateTime loggedDateTime, String name, Long beforeAmount, Long afterAmount, Supplier<Herb> herbSupplier) {
         super(rowNum);
-        this.loggedDateTime = loggedDateTime;
+
+        this.loggedDateTime = (loggedDateTime != null) ? loggedDateTime : LocalDateTime.now();
+
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Herb name should not be null while creating HerbLog entity.");
         this.name = name;
-        this.beforeAmount = beforeAmount;
-        this.afterAmount = afterAmount;
+
+        this.beforeAmount = (beforeAmount == null) ? 0L : beforeAmount;
+        this.afterAmount = (afterAmount == null) ? 0L : afterAmount;
+
         this.herbSupplier = herbSupplier;
     }
 
