@@ -5,6 +5,7 @@ import com.example.spreadsheetdemo.common.exception.OptimisticLockingException;
 import com.example.spreadsheetdemo.common.exception.RollbackFailedException;
 import com.example.spreadsheetdemo.herb.domain.entity.Herb;
 import com.example.spreadsheetdemo.herb.domain.entity.HerbLog;
+import com.example.spreadsheetdemo.herb.domain.model.HerbStatisticsModel;
 import com.example.spreadsheetdemo.herb.dto.*;
 import com.example.spreadsheetdemo.herb.repository.HerbLogRepository;
 import com.example.spreadsheetdemo.herb.repository.HerbRepository;
@@ -339,6 +340,33 @@ public class HerbService {
         List<HerbLog> entityList = herbLogRepository.findAllByLoggedDateTimeBetween(fromExclude, toInclude).orElse(List.of());
 
         return HerbLogViewDTO.from(entityList.stream().map(HerbLogDTO::from).toList());
+    }
+
+    public HerbStatisticsModel getHerbLogStatistics(LocalDate from, LocalDate to) {
+        LocalDate
+                toInclude = to == null ? LocalDate.now() : to,
+                fromExclude = from == null ? toInclude.minusMonths(1) : from.minusDays(1);
+
+        List<HerbDTO> herbDTOList = herbRepository.findAll().stream().map(HerbDTO::from).toList();
+        List<HerbLogDTO> herbLogDTOList = herbLogRepository.findAllByLoggedDateTimeBetween(fromExclude, toInclude).orElse(List.of()).stream().map(HerbLogDTO::from).toList();
+
+        Map<HerbDTO, List<HerbLogDTO>> listMap = new HashMap<>();
+        for (HerbDTO herbDTO : herbDTOList) {
+            listMap.put(
+                    herbDTO,
+                    herbLogDTOList.stream()
+                            .filter(log -> log.getName().equals(herbDTO.getName()))
+                            .sorted(Comparator.comparing(HerbLogDTO::getLoggedDateTime).reversed())
+                            .toList()
+            );
+        }
+
+        System.out.println(listMap);
+
+        HerbStatisticsModel statistics = HerbStatisticsModel.of(fromExclude.plusDays(1), toInclude, listMap);
+        System.out.println(statistics);
+
+        return statistics;
     }
 
 

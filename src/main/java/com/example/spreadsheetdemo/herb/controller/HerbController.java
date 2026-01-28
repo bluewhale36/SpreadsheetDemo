@@ -10,7 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -42,21 +41,8 @@ public class HerbController {
 
     @DeleteMapping("")
     public String deleteHerb(@RequestBody HerbDTO deleteHerbDTO) {
-        System.out.println(deleteHerbDTO);
         herbService.hardDeleteOneHerb(deleteHerbDTO);
         return "herb/inventory";
-    }
-
-    @GetMapping("/log")
-    public String herbLog(
-            Model model,
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
-    ) {
-        model.addAttribute("herbLogViewDTOList", herbService.getHerbLogs(from, to));
-        model.addAttribute("from", from);   // 검색 일자 유지 목적
-        model.addAttribute("to", to);       // 검색 일자 유지 목적
-        return "herb/log";
     }
 
     @GetMapping("/details")
