@@ -23,7 +23,16 @@ public class HerbLogDTO {
     private final Long afterAmount;
 
     public boolean isAmountIncreased() {
-        return afterAmount > beforeAmount;
+        if (beforeAmount != null && afterAmount != null) {
+            return afterAmount > beforeAmount;
+        }
+        if (beforeAmount == null && afterAmount != null) {
+            return true;
+        }
+        if (beforeAmount != null && afterAmount == null) {
+            return false;
+        }
+        return false;
     }
 
     public static HerbLogDTO from(HerbLog herbLog) {
