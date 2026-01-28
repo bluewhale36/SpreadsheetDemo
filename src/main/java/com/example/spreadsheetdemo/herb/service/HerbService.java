@@ -13,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,29 +28,50 @@ public class HerbService {
     private final HerbLogRepository herbLogRepository;
 
 
+    /**
+     * 약재 정보를 조회.<br/>
+     * {@code keyword} 가 전달되었을 경우 해당 문자열을 포함하는 이름을 가진 약재 정보가 조회되며, {@code null} 값 또는 빈 문자열이 전달되었을 경우 모든 약재 정보가 조회됨.
+     *
+     * @param keyword 약재 이름에 포함되는 검색 키워드.
+     * @return 약재 정보를 저장하는 {@link HerbDTO} 객체의 리스트.
+     */
     public List<HerbDTO> getHerbs(String keyword) {
-        List<Herb> entityList;
-        if (keyword == null || keyword.isBlank()) {
-            entityList = herbRepository.findAll();
-        } else {
-            entityList = herbRepository.findAllByNameContains(keyword).orElse(List.of());
+        try {
+            List<Herb> entityList;
+            if (keyword == null || keyword.isBlank()) {
+                entityList = herbRepository.findAll();
+            } else {
+                entityList = herbRepository.findAllByNameContains(keyword).orElse(List.of());
+            }
+            return entityList.stream().map(HerbDTO::from).toList();
+        } catch (GoogleSpreadsheetsAPIException e) {
+            throw new GoogleSpreadsheetsAPIException("약재 정보를 불러올 수 없습니다. 잠시 뒤 다시 시도해주세요.", e);
         }
-        return entityList.stream().map(HerbDTO::from).toList();
     }
 
+    /**
+     * 특정 약재의 정보와 모든 재고 변화 기록을 조회.
+     *
+     * @param name 조회할 약재의 이름
+     * @return 약재의 정보와 재고 변화 기록을 저장하는 {@link HerbInfoDTO} 객체.
+     */
     public HerbInfoDTO getOneHerbInfo(String name) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("name should not be null while getting Herb.");
 
-        Herb entity = herbRepository.findAllByName(name)
-                .orElseThrow(() -> new IllegalArgumentException(name + " 의 약재 정보를 찾을 수 없습니다."))
-                .get(0);
-        HerbDTO herbDTO = HerbDTO.from(entity);
-        List<HerbLogDTO> herbLogDTOList = herbLogRepository.findAllByName(name)
-                .orElse(List.of())
-                .stream()
-                .map(HerbLogDTO::from)
-                .toList();
-        return HerbInfoDTO.of(herbDTO, herbLogDTOList);
+        try {
+            Herb entity = herbRepository.findAllByName(name)
+                    .orElseThrow(() -> new IllegalArgumentException(name + " 의 약재 정보를 찾을 수 없습니다."))
+                    .get(0);
+            HerbDTO herbDTO = HerbDTO.from(entity);
+            List<HerbLogDTO> herbLogDTOList = herbLogRepository.findAllByName(name)
+                    .orElse(List.of())
+                    .stream()
+                    .map(HerbLogDTO::from)
+                    .toList();
+            return HerbInfoDTO.of(herbDTO, herbLogDTOList);
+        } catch (GoogleSpreadsheetsAPIException e) {
+            throw new GoogleSpreadsheetsAPIException("약재 정보를 불러올 수 없습니다. 잠시 뒤 다시 시도해주세요.", e);
+        }
     }
 
     public Set<String> getAllHerbName() {
@@ -120,7 +139,7 @@ public class HerbService {
      * @param herbRegisterDTO 등록할 약재 정보.
      * @return 삽입된 약재 정보 {@link Herb} 객체.
      */
-    private Herb doInsertHerb(HerbRegisterDTO herbRegisterDTO) {
+    private Herb doInsertHerb(HerbRegisterDTO herbRegisterDTO) throws GoogleSpreadsheetsAPIException {
         Herb insertingEntity = Herb.create(herbRegisterDTO);
         return herbRepository.save(insertingEntity);
     }
@@ -130,7 +149,7 @@ public class HerbService {
      * 
      * @param dto 등록된 약재 정보
      */
-    private void logInsertHerb(HerbRegisterDTO dto) {
+    private void logInsertHerb(HerbRegisterDTO dto) throws GoogleSpreadsheetsAPIException {
         HerbLog insertingEntity = HerbLog.of(
                 null, LocalDateTime.now(), dto.getName(), 0L, dto.getAmount()
         );
@@ -218,7 +237,7 @@ public class HerbService {
      * @param dtoList 수정할 약재 정보 리스트
      * @return 수정된 약재 정보 리스트
      */
-    private List<Herb> updateHerbWithOptimisticLocking(List<HerbUpdateDTO> dtoList) {
+    private List<Herb> updateHerbWithOptimisticLocking(List<HerbUpdateDTO> dtoList) throws GoogleSpreadsheetsAPIException {
         List<HerbDTO> expectedHerbDTOList = dtoList.stream().map(HerbDTO::from).sorted(Comparator.comparing(HerbDTO::getRowNum)).toList(), actualHerbDTOList;
         List<Herb> entityList = herbRepository
                         .findAllByRowNums(
@@ -240,7 +259,7 @@ public class HerbService {
      * @param dtoList 수정할 약재 정보 리스트
      * @return 수정된 약재 정보 리스트
      */
-    private List<Herb> doUpdateHerb(List<HerbUpdateDTO> dtoList) {
+    private List<Herb> doUpdateHerb(List<HerbUpdateDTO> dtoList) throws GoogleSpreadsheetsAPIException {
         List<Herb> updatingEntityList = dtoList.stream()
                 .map(
                         dto -> Herb.of(dto.getRowNum(), dto.getName(), dto.getNewAmount(), dto.getNewLastStoredDate(), dto.getNewMemo())
@@ -254,7 +273,7 @@ public class HerbService {
      *
      * @param dtoList 수정된 약재 정보 리스트
      */
-    private void logUpdateHerb(List<HerbUpdateDTO> dtoList) {
+    private void logUpdateHerb(List<HerbUpdateDTO> dtoList) throws GoogleSpreadsheetsAPIException {
         List<HerbLog> insertingEntityList = dtoList.stream()
                 .map(
                         dto -> HerbLog.of(null, LocalDateTime.now(), dto.getName(), dto.getOriginalAmount(), dto.getNewAmount())
@@ -268,7 +287,7 @@ public class HerbService {
      *
      * @param dtoList 수정된 약재 정보 리스트
      */
-    private void rollbackHerbUpdate(List<HerbUpdateDTO> dtoList) {
+    private void rollbackHerbUpdate(List<HerbUpdateDTO> dtoList) throws GoogleSpreadsheetsAPIException {
         List<Herb> rollingBackEntityList = dtoList.stream()
                         .map(
                                 dto -> Herb.of(dto.getRowNum(), dto.getName(), dto.getOriginalAmount(), dto.getOriginalLastStoredDate(), dto.getOriginalMemo())
@@ -283,22 +302,28 @@ public class HerbService {
         transactionalHardDeleteOneHerb(deletingHerbDTO);
     }
 
+    /**
+     * 약재 및 재고 기록 삭제 트랜잭션 처리
+     * 약재 삭제 -> 로그 삭제 순으로 처리하며, 중간에 실패할 경우 롤백 수행.
+     *
+     * @param deletingHerbDTO 삭제할 약재 정보
+     */
     private void transactionalHardDeleteOneHerb(HerbDTO deletingHerbDTO) {
         try {
             hardDeleteWithOptimisticLocking(deletingHerbDTO);
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GoogleSpreadsheetsAPIException e) {
             throw new GoogleSpreadsheetsAPIException("약재 삭제에 실패했습니다.\n잠시 뒤 다시 시도해주세요.", e);
         }
 
         try {
             deleteLogsForOneHerb(deletingHerbDTO);
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GoogleSpreadsheetsAPIException e) {
             log.error("Error deleting herb log data : {}", e.getMessage());
             log.warn("Attempting to rollback herb deletion...");
 
             try {
                 rollbackHerbDeletion(deletingHerbDTO);
-            } catch (GeneralSecurityException | IOException e1) {
+            } catch (GoogleSpreadsheetsAPIException e1) {
                 // 롤백 실패
                 log.error("[CRITICAL] Deletion Rollback failed : {}", e1.getMessage());
                 throw new RollbackFailedException("약재 삭제에 실패하여 데이터 자동 복구를 시도하였으나 실패했습니다.\n수동 복구가 필요합니다.", e1);
@@ -310,7 +335,14 @@ public class HerbService {
         }
     }
 
-    private void hardDeleteWithOptimisticLocking(HerbDTO deletingHerbDTO) throws GeneralSecurityException, IOException {
+    /**
+     * 낙관적 잠금을 이용한 약재 삭제.<br/>
+     * 삭제할 약재 정보와 현재 Spreadsheet 에 기록된 약재 정보를 행 번호를 기준으로 조회하고 비교하여 동일할 경우에만 삭제 수행.
+     * 그렇지 않은 경우 {@link OptimisticLockingException} 예외 발생.
+     *
+     * @param deletingHerbDTO 삭제할 약재 정보.
+     */
+    private void hardDeleteWithOptimisticLocking(HerbDTO deletingHerbDTO) throws GoogleSpreadsheetsAPIException {
         HerbDTO actualHerb = HerbDTO.from(herbRepository.findByRowNum(deletingHerbDTO.getRowNum()).orElse(null));
         if (!Objects.equals(deletingHerbDTO, actualHerb)) {
             throw new OptimisticLockingException("약재 삭제에 실패했습니다.\n다른 사용자가 해당 약재 정보를 수정했을 수 있습니다. 최신 정보를 불러온 후 다시 시도해주세요.");
@@ -318,11 +350,21 @@ public class HerbService {
         herbRepository.deleteByRowNum(deletingHerbDTO.getRowNum());
     }
 
-    private void deleteLogsForOneHerb(HerbDTO herbDTO) throws GeneralSecurityException, IOException {
+    /**
+     * 약재의 재고 기록 전체 삭제.
+     *
+     * @param herbDTO 삭제할 재고 기록의 약재 정보
+     */
+    private void deleteLogsForOneHerb(HerbDTO herbDTO) throws GoogleSpreadsheetsAPIException {
         herbLogRepository.deleteAllByName(herbDTO.getName());
     }
 
-    private void rollbackHerbDeletion(HerbDTO rollingBackDTO) throws GeneralSecurityException, IOException {
+    /**
+     * 약재 삭제 롤백 수행.
+     *
+     * @param rollingBackDTO 롤백할 약재 정보.
+     */
+    private void rollbackHerbDeletion(HerbDTO rollingBackDTO) throws GoogleSpreadsheetsAPIException {
         HerbRegisterDTO restore = HerbRegisterDTO.builder()
                 .name(rollingBackDTO.getName())
                 .amount(rollingBackDTO.getAmount())
@@ -332,6 +374,13 @@ public class HerbService {
         herbRepository.save(Herb.create(restore));
     }
 
+    /**
+     * 특정 일자 내의 모든 약재 재고 변화 기록을 조히. 일자가 명시되지 않은 경우 실행 당일을 기준으로 1개월 이내의 기록이 조회됨.
+     *
+     * @param from 기록을 조회하는 일자 범위의 시작 일자. {@code null} 값 전달 시 {@code to} 매개변수의 1개월 전 일자를 기준으로 함.
+     * @param to 기록을 조회하는 일자 범위의 종료 일자. {@code null} 값 전달 시 실행 일자를 기준으로 함.
+     * @return 전달된 일자 범위 내의 모든 약재 재고 변화 기록을 담은 {@link HerbLogViewDTO} 의 리스트.
+     */
     public List<HerbLogViewDTO> getHerbLogs(LocalDate from, LocalDate to) {
         LocalDate
                 toInclude = to == null ? LocalDate.now() : to,
@@ -342,6 +391,13 @@ public class HerbService {
         return HerbLogViewDTO.from(entityList.stream().map(HerbLogDTO::from).toList());
     }
 
+    /**
+     * 특정 일자 내의 모든 약재 재고 변화 기록에 대한 통계 모델을 조회. 일자가 명시되지 않은 경우 실행 당일을 기준으로 1개월 이내의 기록에 대한 통계가 조회됨.
+     *
+     * @param from 통계를 위한 기록을 조회하는 일자 범위의 시작 일자. {@code null} 값 전달 시 {@code to} 매개변수의 1개월 전 일자를 기준으로 함.
+     * @param to 통계를 위한 기록을 조회하는 일자 범위의 종료 일자. {@code null} 값 전달 시 실행 일자를 기준으로 함.
+     * @return 전달된 일자 범위 내의 모든 약재 재고 변화 기록에 대한 통계 모델인 {@link HerbStatisticsModel} 객체.
+     */
     public HerbStatisticsModel getHerbLogStatistics(LocalDate from, LocalDate to) {
         LocalDate
                 toInclude = to == null ? LocalDate.now() : to,
@@ -361,12 +417,7 @@ public class HerbService {
             );
         }
 
-        System.out.println(listMap);
-
-        HerbStatisticsModel statistics = HerbStatisticsModel.of(fromExclude.plusDays(1), toInclude, listMap);
-        System.out.println(statistics);
-
-        return statistics;
+        return HerbStatisticsModel.of(fromExclude.plusDays(1), toInclude, listMap);
     }
 
 

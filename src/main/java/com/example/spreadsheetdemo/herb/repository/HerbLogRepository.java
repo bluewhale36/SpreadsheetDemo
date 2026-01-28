@@ -33,7 +33,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         try {
             return dqo.select(HerbLogQuerySpec.ofAllDataRange(null), herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -48,7 +48,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
                     Optional.empty() :
                     Optional.of(result.stream().sorted(Comparator.comparing(HerbLog::getLoggedDateTime).reversed()).toList());
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -61,7 +61,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
                     Optional.empty() :
                     Optional.of(result.stream().sorted(Comparator.comparing(HerbLog::getLoggedDateTime).reversed()).toList());
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -71,7 +71,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
             List<HerbLog> result = dqo.select(querySpec, herbLogRowMapper);
             return result.size();
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -88,7 +88,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         try {
             return dqo.insert(entity, querySpec, herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
@@ -97,7 +97,7 @@ public class HerbLogRepository implements SheetsRepository<HerbLog> {
         try {
             return dqo.update(entity, querySpec, herbLogRowMapper);
         } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleSpreadsheetsAPIException(e.getMessage(), e);
+            throw new GoogleSpreadsheetsAPIException("API 통신 오류.", e);
         }
     }
 
