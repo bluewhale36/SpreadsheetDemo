@@ -24,22 +24,25 @@
 
 <div class="container">
 
+    <div class="tab-nav">
+        <a href="/herb/log/list" class="tab-item active">목록</a>
+        <a href="/herb/log/statistics" class="tab-item">통계</a>
+    </div>
+
     <div class="toolbar">
         <form th:action="@{/herb/log/list}" method="get" class="date-search-form">
             <div class="date-input-group">
                 <input type="date" name="from" class="search-date-input"
-                       th:value="${from}" aria-label="시작일" title="조회 시작일">
+                       th:value="${from}" aria-label="시작일">
                 <span class="date-separator">~</span>
                 <input type="date" name="to" class="search-date-input"
-                       th:value="${to}" aria-label="종료일" title="조회 종료일">
+                       th:value="${to}" aria-label="종료일">
             </div>
-
-            <button type="button" class="reset-btn" onclick="location.href='/herb/log'"
+            <button type="button" class="reset-btn" onclick="location.href='/herb/log/list'"
                     title="검색 초기화"
                     th:if="${(from != null && !#strings.isEmpty(from)) or (to != null && !#strings.isEmpty(to))}">
                 ✕
             </button>
-
             <button type="submit" class="search-btn" title="검색">🔍</button>
         </form>
     </div>
@@ -52,38 +55,28 @@
         <div class="log-date-details"
              th:each="viewDTO, iterStat : ${herbLogViewDTOList}"
              th:classappend="${iterStat.first} ? 'open' : ''">
-
             <div class="log-date-summary" onclick="toggleAccordion(this)">
-                <span class="log-date-badge"
-                      th:text="${#temporals.format(viewDTO.loggedDate, 'yyyy-MM-dd (E)')}">2025-12-25 (목)</span>
+                <span class="log-date-badge" th:text="${#temporals.format(viewDTO.loggedDate, 'yyyy-MM-dd (E)')}"></span>
             </div>
-
             <div class="log-content-wrapper">
                 <div class="log-content-inner">
                     <th:block th:each="entry : ${viewDTO.herbLogListMapByName}">
-
                         <div class="log-item">
                             <div class="log-herb-name" th:text="${entry.key}">약재명</div>
-
                             <div class="change-grid">
                                 <div class="grid-cell grid-header">항목</div>
                                 <div class="grid-cell grid-header">시각</div>
                                 <div class="grid-cell grid-header">변경 전</div>
                                 <div class="grid-cell grid-header">변경 후</div>
-
                                 <th:block th:each="log : ${entry.value}">
                                     <div class="grid-cell grid-label">수량</div>
-                                    <div class="grid-cell val-time"
-                                         th:text="${#temporals.format(log.loggedDateTime, 'HH:mm')}">14:30</div>
-                                    <div class="grid-cell val-old" th:text="${log.beforeAmount}">3</div>
+                                    <div class="grid-cell val-time" th:text="${#temporals.format(log.loggedDateTime, 'HH:mm')}"></div>
+                                    <div class="grid-cell val-old" th:text="${log.beforeAmount}"></div>
                                     <div class="grid-cell">
-                                        <span th:classappend="${log.amountIncreased} ? 'val-badge val-inc' : 'val-badge val-dec'">
-                                            <span th:text="${log.afterAmount}">5</span>
-                                            <span class="val-diff" th:if="${log.amountIncreased}"
-                                                  th:text="|(+${log.afterAmount - log.beforeAmount})|">(+2)</span>
-                                            <span class="val-diff" th:unless="${log.amountIncreased}"
-                                                  th:text="|(${log.afterAmount - log.beforeAmount})|">(-1)</span>
-                                        </span>
+                                         <span th:classappend="${log.amountIncreased} ? 'val-badge val-inc' : 'val-badge val-dec'">
+                                             <span th:text="${log.afterAmount}"></span>
+                                             <span class="val-diff" th:text="${log.amountIncreased} ? |(+${log.afterAmount - log.beforeAmount})| : |(${log.afterAmount - log.beforeAmount})|"></span>
+                                         </span>
                                     </div>
                                 </th:block>
                             </div>

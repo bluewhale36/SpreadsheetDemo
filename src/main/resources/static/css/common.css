@@ -141,6 +141,35 @@ input, textarea {
     border-bottom: 2px solid var(--primary-color);
 }
 
+/* --- 탭 메뉴 스타일 (log.css, statistics.css 공통) --- */
+.tab-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0;
+}
+
+.tab-item {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #888;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; /* border 겹침 처리 */
+    transition: all 0.2s;
+}
+
+.tab-item:hover {
+    color: var(--text-color);
+}
+
+.tab-item.active {
+    color: var(--primary-color-dark, #333); /* 진한 색상 */
+    border-bottom-color: var(--primary-color); /* 활성 탭 하단 강조 */
+}
+
 /* --- 버튼 스타일 --- */
 .btn {
     padding: 0.6rem 1.2rem;

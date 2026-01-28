@@ -35,7 +35,9 @@ public class HerbLogController {
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to
     ) {
-        herbService.getHerbLogStatistics(from, to);
-        return "herb/log";
+        model.addAttribute("herbStatisticsModel", herbService.getHerbLogStatistics(from, to));
+        model.addAttribute("from", from);   // 검색 일자 유지 목적
+        model.addAttribute("to", to);       // 검색 일자 유지 목적
+        return "herb/statistics";
     }
 }

@@ -342,7 +342,7 @@ public class HerbService {
         return HerbLogViewDTO.from(entityList.stream().map(HerbLogDTO::from).toList());
     }
 
-    public void getHerbLogStatistics(LocalDate from, LocalDate to) {
+    public HerbStatisticsModel getHerbLogStatistics(LocalDate from, LocalDate to) {
         LocalDate
                 toInclude = to == null ? LocalDate.now() : to,
                 fromExclude = from == null ? toInclude.minusMonths(1) : from.minusDays(1);
@@ -365,6 +365,8 @@ public class HerbService {
 
         HerbStatisticsModel statistics = HerbStatisticsModel.of(fromExclude.plusDays(1), toInclude, listMap);
         System.out.println(statistics);
+
+        return statistics;
     }
 
 

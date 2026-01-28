@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>기간별 입출고 통계</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/statistics.css}">
+    <script th:src="@{/js/statistics.js}" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <nav class="breadcrumb-nav" aria-label="breadcrumb">
+        <ol class="breadcrumb-list">
+            <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">재고 관리</a></li>
+            <li class="breadcrumb-item"><a href="/herb" class="breadcrumb-link">약재 관리</a></li>
+            <li class="breadcrumb-item active" aria-current="page">기간별 통계</li>
+        </ol>
+    </nav>
+    <div class="header-actions">
+        <button type="button" class="btn btn-secondary" onclick="location.href='/herb'">약재보기</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="tab-nav">
+        <a href="/herb/log/list" class="tab-item">목록</a>
+        <a href="/herb/log/statistics" class="tab-item active">통계</a>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-actions">
+            <label class="checkbox-label">
+                <input type="checkbox" id="hideZero" onchange="toggleZeroRows()"> 변동 없는 약재 숨기기
+            </label>
+        </div>
+
+        <form th:action="@{/herb/log/statistics}" method="get" class="date-search-form"
+              onsubmit="return validateDates()">
+            <div class="date-input-group">
+                <input type="date" id="from" name="from" class="search-date-input"
+                       th:value="${herbStatisticsModel.from}" aria-label="시작일">
+                <span class="date-separator">~</span>
+                <input type="date" id="to" name="to" class="search-date-input"
+                       th:value="${herbStatisticsModel.to}" aria-label="종료일">
+            </div>
+            <button type="submit" class="search-btn" title="조회">🔍</button>
+        </form>
+    </div>
+
+    <div class="stats-container">
+        <table class="stats-table">
+            <thead>
+            <tr>
+                <th style="width: 20%">약재명</th>
+                <th style="width: 15%">총 입고</th>
+                <th style="width: 15%">총 출고</th>
+                <th style="width: 15%">순변동</th>
+                <th style="width: 10%">상세</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${herbStatisticsModel.specMap.isEmpty()}">
+                <td colspan="5" class="empty-message">해당 기간의 데이터가 없습니다.</td>
+            </tr>
+
+            <th:block th:each="entry : ${herbStatisticsModel.specMap}"
+                      th:with="herb=${entry.key}, spec=${entry.value}, netChange=${entry.value.totalStored - entry.value.totalDelivered}">
+
+                <tr class="stats-row"
+                    th:data-stored="${spec.totalStored}"
+                    th:data-delivered="${spec.totalDelivered}">
+
+                    <td class="col-name">
+                        <span class="herb-name" th:text="${herb.name}">감초</span>
+                    </td>
+                    <td class="col-in">
+                        <span class="badge in" th:if="${spec.totalStored > 0}"
+                              th:text="|+${spec.totalStored}|">+10</span>
+                        <span class="zero" th:if="${spec.totalStored == 0}">-</span>
+                    </td>
+                    <td class="col-out">
+                        <span class="badge out" th:if="${spec.totalDelivered > 0}" th:text="|-${spec.totalDelivered}|">-5</span>
+                        <span class="zero" th:if="${spec.totalDelivered == 0}">-</span>
+                    </td>
+                    <td class="col-net">
+                        <span class="net-value"
+                              th:classappend="${netChange > 0 ? 'plus' : (netChange < 0 ? 'minus' : 'neutral')}"
+                              th:text="${netChange > 0 ? '+' + netChange : netChange}">
+                            +5
+                        </span>
+                    </td>
+                    <td class="col-action">
+                        <button type="button" class="btn-icon toggle-details-btn"
+                                th:if="${!spec.herbLogDTOList.isEmpty()}"
+                                onclick="toggleDetails(this)">
+                            ▼
+                        </button>
+                    </td>
+                </tr>
+
+                <tr class="details-row" style="display: none;" th:if="${!spec.herbLogDTOList.isEmpty()}">
+                    <td colspan="5" class="details-cell">
+                        <div class="details-wrapper">
+                            <div class="log-grid">
+                                <div class="grid-header">일시</div>
+                                <div class="grid-header">구분</div>
+                                <div class="grid-header">변경 전</div>
+                                <div class="grid-header">변경 후</div>
+                                <div class="grid-header">변동량</div>
+
+                                <th:block th:each="log : ${spec.herbLogDTOList}">
+                                    <div class="grid-cell time-cell"
+                                         th:text="${#temporals.format(log.loggedDateTime, 'yyyy-MM-dd HH:mm')}">
+                                        2025-01-01 12:00
+                                    </div>
+
+                                    <div class="grid-cell type-cell">
+                    <span class="log-type"
+                          th:classappend="${log.amountIncreased ? 'in' : 'out'}"
+                          th:text="${log.amountIncreased ? '입고' : '출고'}">입고</span>
+                                    </div>
+
+                                    <div class="grid-cell old-cell" th:text="${log.beforeAmount}">10</div>
+
+                                    <div class="grid-cell new-cell" th:text="${log.afterAmount}">15</div>
+
+                                    <div class="grid-cell diff-cell">
+                    <span class="diff-badge"
+                          th:classappend="${log.amountIncreased ? 'diff-inc' : 'diff-dec'}"
+                          th:text="${log.amountIncreased ? '+' : ''} + ${log.afterAmount - log.beforeAmount}">
+                        +5
+                    </span>
+                                    </div>
+                                </th:block>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+    <div style="height: 3rem;"></div>
+</div>
+
+</body>
+</html>
